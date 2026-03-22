@@ -1,6 +1,16 @@
 project:
-  title: "Thinh's DPhil"
+  type: website
   output-dir: docs
 
-
-
+website:
+  title: "Thinh's DPhil"
+  navbar:
+    left:
+      - hosp-com.qmd
+      - sero-vax.qmd
+      
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true

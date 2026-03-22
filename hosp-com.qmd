@@ -403,12 +403,6 @@ test_sim <- run_one_sim(
 traj <- test_sim$trajectory
 summary_data <- test_sim$summary
 
-# 3. Print the hard evidence
-cat("Expected max_time: 365\n")
-cat("Actual end_time:  ", summary_data$end_time, "\n")
-cat("Final I_total:    ", tail(traj$I_total, 1), "\n")
-cat("Status message:   ", summary_data$status, "\n\n")
-
 plot_sim(traj)
 ```
 
@@ -438,6 +432,15 @@ plot_sim(sim2$trajectory, "rho = 0.001")
 ```
 
 ## Sensitivity analysis
+
+The model is run with $N_H = 5000$, using measles $R_{0C} = 18$ in the community. Infectious period is set as 7 days ($\gamma_C = \frac{1}{7}$ therefore $\beta_C = R_{0C} \cdot \gamma_C = \frac{18}{7}$. Assuming infectious period of hospital-infected cases is the same as community-infected ($\gamma_H = \gamma_C$). Susceptibility fraction in the community is $s_{C0} = 0.05$ which is 95% measles vaccination coverage. The model stops (outbreak ends) when $I_H + I_C \leq 1$.
+
+Sensitivity analysis is run on a grid of:
+
+- $a$ from 100-150 (community size $N_C$ from 50,000-750,000)
+- $b$ from 1-10 ($\beta_H$ is 1-10 times $\beta_C$)
+- $c$ from 1-10 (susceptibility fraction in the hospital from 0.05-0.5)
+- $rho$ from 0.001-0.01
 
 ```{r}
 # grid <- expand_grid(
@@ -487,36 +490,9 @@ ggplot(plot_data, aes(x = b, y = c, fill = outbreak_size)) +
   )
 ```
 
-## Surrogate modelling
+### Parameter importance
 
-```{r, message=FALSE, warning=FALSE}
-library(mgcv)
-```
-
-```{r}
-# 1. Clean the data
-# The GAM cannot handle NA values from infeasible ODE runs
-model_data <- results |>
-  filter(!is.na(outbreak_size))
-
-# 2. Fit the tensor product GAM
-# We use family = gaussian(link = "identity") because the data is deterministic continuous.
-# k sets the basis dimension per parameter. Keep it low (e.g., 4 or 5) initially 
-# to avoid an explosion in degrees of freedom (total df = k^4).
-# surrogate_gam <- gam(
-#   outbreak_size ~ te(a, b, c, rho, k = 5),
-#   data = model_data,
-#   family = gaussian(link = "identity"),
-#   method = "REML" # REML is standard for penalised smoothers to prevent overfitting
-# )
-# saveRDS(surrogate_gam, "data/surrogate_gam.rds")
-surrogate_gam <- readRDS("data/surrogate_gam.rds")
-
-# 3. Check the mechanical fit
-# This will output the R-squared (deviance explained). 
-# For a deterministic surrogate, you want this > 95%.
-summary(surrogate_gam)
-```
+Use partial rank correlation coefficient (PRCC):
 
 ```{r, warning=FALSE, message=FALSE}
 library(sensitivity)
@@ -553,4 +529,67 @@ ggplot(prcc_plot_data, aes(x = prcc_value, y = parameter)) +
   ) +
   theme_minimal()
 ```
+
+## Surrogate modelling
+
+```{r, message=FALSE, warning=FALSE}
+library(mgcv)
+```
+
+```{r}
+# 1. Clean the data
+# The GAM cannot handle NA values from infeasible ODE runs
+model_data <- results |>
+  filter(!is.na(outbreak_size))
+
+# 2. Fit the tensor product GAM
+# We use family = gaussian(link = "identity") because the data is deterministic continuous.
+# k sets the basis dimension per parameter. Keep it low (e.g., 4 or 5) initially 
+# to avoid an explosion in degrees of freedom (total df = k^4).
+# surrogate_gam <- gam(
+#   outbreak_size ~ te(a, b, c, rho, k = 5),
+#   data = model_data,
+#   family = gaussian(link = "identity"),
+#   method = "REML" # REML is standard for penalised smoothers to prevent overfitting
+# )
+# saveRDS(surrogate_gam, "data/surrogate_gam.rds")
+surrogate_gam <- readRDS("data/surrogate_gam.rds")
+
+# 3. Check the mechanical fit
+# This will output the R-squared (deviance explained). 
+# For a deterministic surrogate, you want this > 95%.
+summary(surrogate_gam)
+
+# Create a prediction sequence for 'rho'
+pred_grid <- tibble(
+  rho = seq(min(model_data$rho), max(model_data$rho), length.out = 100),
+  a = 100,
+  b = 1,
+  c = 1
+)
+
+# Generate predictions and standard errors
+predictions <- bind_cols(
+  pred_grid,
+  as_tibble(predict(surrogate_gam, newdata = pred_grid, se.fit = TRUE))
+) |>
+  mutate(
+    lower = fit - (1.96 * se.fit),
+    upper = fit + (1.96 * se.fit)
+  )
+
+# Plot the marginal effect of rho
+ggplot(predictions, aes(x = rho, y = fit)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) +
+  geom_line(linewidth = 1) +
+  labs(
+    title = "Marginal effect of cross-transmission (rho) on outbreak size",
+    subtitle = "When a=100, b=1, c=1",
+    x = "Mixing fraction (rho)",
+    y = "Predicted outbreak size"
+  ) +
+  theme_minimal()
+```
+
+
 

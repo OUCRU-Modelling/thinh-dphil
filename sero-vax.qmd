@@ -5,3 +5,5 @@ format:
     code-fold: true
 ---
 
+In HCDC data, date of reporting and date of admission is not NA, but onset date can have NA values.
+
