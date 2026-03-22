@@ -21,7 +21,32 @@ Attack rate is the proportion of new daily cases relative to the remaining susce
 - If the daily case count is increasing, the daily attack rate must also increase: because the numerator (daily cases) is growing while the denominator (susceptible pool) is dropping
 - The daily attack rate peaks later than the daily case count: because even when new cases begin to drop, the susceptible pool decreases at an even faster rate, causing the ratio to continue rising for a lag period
 
-In an open population model, when the birth rate or migration is very high (higher than the rate of depletion), the denominator increase faster and make the attack rate drops.
+**Prove this**:
+
+The rate of new infections (incidence):
+
+$$C(t) = -\frac{dS}{dt} = \beta S(t) \frac{I(t)}{N}$$
+
+The attack rate:
+
+$$A(t) = \frac{C(t)}{S(t)} = \frac{\beta S(t) \frac{I(t)}{N}}{S(t)} = \beta \frac{I(t)}{N}$$
+
+When incidence peaks:
+
+$$\begin{align}
+C'(t) &= 0 \\
+\Leftrightarrow \frac{\beta}{N} \left[ S'(t)I(t) + S(t)I'(t) \right] &= 0 \\
+\Leftrightarrow S'(t)I(t) + S(t)I'(t) &= 0 \\
+\Leftrightarrow S(t)I'(t) &= -S'(t)I(t)
+\end{align}$$
+
+Because $S'(t)$ is negative, $-S'(t)I(t) > 0$, therefore $I'(t) > 0$.
+
+$A'(t) = \frac{\beta}{N} I'(t)$, this proves that $A'(t) > 0$ when incidence peaks, meaning attack rate is still increasing.
+
+When incidence peaks, attack rate is still increasing, so before incidence peaks (incidence is increasing), attack rate is guaranteed to increase.
+
+In an open population model, when the birth rate or migration is very high (higher than the rate of depletion), the denominator increase faster and can make the attack rate drops.
 
 ```{r}
 # Define the SIR equations
