@@ -5,5 +5,100 @@ format:
     code-fold: true
 ---
 
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(deSolve)
+library(tidyverse)
+library(scales)
+library(patchwork)
+```
+
 In HCDC data, date of reporting and date of admission is not NA, but onset date can have NA values.
+
+## Attack rate
+
+Attack rate is the proportion of new daily cases relative to the remaining susceptible pool. In a closed population:
+
+- If the daily case count is increasing, the daily attack rate must also increase: because the numerator (daily cases) is growing while the denominator (susceptible pool) is dropping
+- The daily attack rate peaks later than the daily case count: because even when new cases begin to drop, the susceptible pool decreases at an even faster rate, causing the ratio to continue rising for a lag period
+
+In an open population model, when the birth rate or migration is very high (higher than the rate of depletion), the denominator increase faster and make the attack rate drops.
+
+```{r}
+# Define the SIR equations
+sir_equations <- function(time, state, parameters) {
+  with(as.list(c(state, parameters)), {
+    dS <- -beta * S * I / N
+    dI <- beta * S * I / N - gamma * I
+    dR <- gamma * I
+    
+    list(c(dS, dI, dR))
+  })
+}
+
+# Set parameters (R0 = 4)
+N <- 100000
+initial_state <- c(S = N - 1, I = 1, R = 0)
+parameters <- c(beta = 0.4, gamma = 0.1) 
+times <- seq(0, 150, by = 1)
+
+# Simulate and calculate metrics
+simulation <- ode(y = initial_state, times = times, func = sir_equations, parms = parameters) |>
+  as.data.frame() |>
+  as_tibble() |>
+  mutate(
+    daily_cases = as.numeric(lag(S, default = first(S)) - S),
+    daily_attack_rate = as.numeric(daily_cases / lag(S, default = first(S)))
+  ) |>
+  mutate(daily_attack_rate = if_else(is.na(daily_attack_rate), 0, daily_attack_rate))
+
+# Plot 1: Absolute scale (Numerator vs Denominator)
+plot1 <- simulation |>
+  ggplot(aes(x = time)) +
+  geom_line(aes(y = S, colour = "Susceptible (denominator)"), linewidth = 1.2) +
+  geom_col(aes(y = daily_cases, fill = "Daily cases (numerator)"), alpha = 0.8) +
+  scale_y_continuous(labels = comma) +
+  scale_colour_manual(values = c("Susceptible (denominator)" = "#2C3E50")) + # Dark Slate
+  scale_fill_manual(values = c("Daily cases (numerator)" = "#2980B9")) +    # Clear Blue
+  labs(
+    title = "Daily cases vs remaining susceptible pool",
+    x = NULL, # Remove x-axis label on top plot to reduce clutter
+    y = "Number of individuals"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "top", 
+    legend.title = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+# Plot 2: Observing the peak lag (Cases vs Attack rate)
+scale_ar <- max(simulation$daily_cases) / max(simulation$daily_attack_rate)
+
+plot2 <- simulation |>
+  ggplot(aes(x = time)) +
+  geom_col(aes(y = daily_cases, fill = "Daily cases"), alpha = 0.4) +
+  geom_line(aes(y = daily_attack_rate * scale_ar, colour = "Daily attack rate"), linewidth = 1.2) +
+  scale_y_continuous(
+    name = "Daily new cases",
+    labels = comma,
+    sec.axis = sec_axis(~ . / scale_ar, name = "Daily attack rate", labels = percent)
+  ) +
+  scale_colour_manual(values = c("Daily attack rate" = "#C0392B")) + # Strong Red
+  scale_fill_manual(values = c("Daily cases" = "#2980B9")) +         # Clear Blue
+  labs(
+    title = "Lag effect: incidence peak vs attack rate peak",
+    x = "Time (days)"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "top", 
+    legend.title = element_blank(),
+    plot.title = element_text(face = "bold"),
+    axis.title.y.left = element_text(colour = "#2980B9", face = "bold", margin = margin(r = 10)),
+    axis.title.y.right = element_text(colour = "#C0392B", face = "bold", margin = margin(l = 10))
+  )
+
+# Combine plots using patchwork
+plot1 / plot2
+```
 
