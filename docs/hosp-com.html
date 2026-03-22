@@ -667,10 +667,10 @@ N_C = S_C + I_C + R_C\]</span></p>
 </section>
 <section id="sensitivity-analysis" class="level2">
 <h2 class="anchored" data-anchor-id="sensitivity-analysis">Sensitivity analysis</h2>
-<p>The model is run with <span class="math inline">\(N_H = 5000\)</span>, using measles <span class="math inline">\(R_{0C} = 18\)</span> in the community. Infectious period is set as 7 days (<span class="math inline">\(\gamma_C = \frac{1}{7}\)</span> therefore <span class="math inline">\(\beta_C = R_{0C} \cdot \gamma_C = \frac{18}{7}\)</span>. Assuming infectious period of hospital-infected cases is the same as community-infected (<span class="math inline">\(\gamma_H = \gamma_C\)</span>). Susceptibility fraction in the community is <span class="math inline">\(s_{C0} = 0.05\)</span> which is 95% measles vaccination coverage. The model stops (outbreak ends) when <span class="math inline">\(I_H + I_C \leq 1\)</span>.</p>
-<p>Sensitivity analysis is run on a grid of:</p>
+<p>The model is run with a hospital population of <span class="math inline">\(N_H = 5000\)</span> and a community basic reproduction number for measles of <span class="math inline">\(R_{0C} = 18\)</span>. The infectious period is set to 7 days (<span class="math inline">\(\gamma_C = \frac{1}{7}\)</span>), resulting in a community transmission rate of <span class="math inline">\(\beta_C = R_{0C} \cdot \gamma_C = \frac{18}{7}\)</span>. We assume the infectious period for hospital-acquired cases is equal to that of community-acquired cases (<span class="math inline">\(\gamma_H = \gamma_C\)</span>). The initial susceptible fraction in the community is <span class="math inline">\(s_{C0} = 0.05\)</span>, corresponding to 95% measles vaccination coverage. The model simulation stops (the outbreak ends) when <span class="math inline">\(I_H + I_C \leq 1\)</span>.</p>
+<p>Sensitivity analysis is conducted across a parameter grid of:</p>
 <ul>
-<li><span class="math inline">\(a\)</span> from 100-150 (community size <span class="math inline">\(N_C\)</span> from 50,000-750,000)</li>
+<li><span class="math inline">\(a\)</span> from 100-150 (community size <span class="math inline">\(N_C\)</span> from 500,000-750,000)</li>
 <li><span class="math inline">\(b\)</span> from 1-10 (<span class="math inline">\(\beta_H\)</span> is 1-10 times <span class="math inline">\(\beta_C\)</span>)</li>
 <li><span class="math inline">\(c\)</span> from 1-10 (susceptibility fraction in the hospital from 0.05-0.5)</li>
 <li><span class="math inline">\(rho\)</span> from 0.001-0.01</li>

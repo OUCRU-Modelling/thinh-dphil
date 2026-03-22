@@ -433,11 +433,11 @@ plot_sim(sim2$trajectory, "rho = 0.001")
 
 ## Sensitivity analysis
 
-The model is run with $N_H = 5000$, using measles $R_{0C} = 18$ in the community. Infectious period is set as 7 days ($\gamma_C = \frac{1}{7}$ therefore $\beta_C = R_{0C} \cdot \gamma_C = \frac{18}{7}$. Assuming infectious period of hospital-infected cases is the same as community-infected ($\gamma_H = \gamma_C$). Susceptibility fraction in the community is $s_{C0} = 0.05$ which is 95% measles vaccination coverage. The model stops (outbreak ends) when $I_H + I_C \leq 1$.
+The model is run with a hospital population of $N_H = 5000$ and a community basic reproduction number for measles of $R_{0C} = 18$. The infectious period is set to 7 days ($\gamma_C = \frac{1}{7}$), resulting in a community transmission rate of $\beta_C = R_{0C} \cdot \gamma_C = \frac{18}{7}$. We assume the infectious period for hospital-acquired cases is equal to that of community-acquired cases ($\gamma_H = \gamma_C$). The initial susceptible fraction in the community is $s_{C0} = 0.05$, corresponding to 95% measles vaccination coverage. The model simulation stops (the outbreak ends) when $I_H + I_C \leq 1$.
 
-Sensitivity analysis is run on a grid of:
+Sensitivity analysis is conducted across a parameter grid of:
 
-- $a$ from 100-150 (community size $N_C$ from 50,000-750,000)
+- $a$ from 100-150 (community size $N_C$ from 500,000-750,000)
 - $b$ from 1-10 ($\beta_H$ is 1-10 times $\beta_C$)
 - $c$ from 1-10 (susceptibility fraction in the hospital from 0.05-0.5)
 - $rho$ from 0.001-0.01
