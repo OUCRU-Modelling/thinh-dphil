@@ -104,35 +104,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
-  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
-
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
 
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -212,21 +183,18 @@ window.Quarto = {
 <li>If the daily case count is increasing, the daily attack rate must also increase: because the numerator (daily cases) is growing while the denominator (susceptible pool) is dropping</li>
 <li>The daily attack rate peaks later than the daily case count: because even when new cases begin to drop, the susceptible pool decreases at an even faster rate, causing the ratio to continue rising for a lag period</li>
 </ul>
-<p><strong>Prove this</strong>:</p>
-<p>The rate of new infections (incidence):</p>
-<p><span class="math display">\[C(t) = -\frac{dS}{dt} = \beta S(t) \frac{I(t)}{N}\]</span></p>
-<p>The attack rate:</p>
-<p><span class="math display">\[A(t) = \frac{C(t)}{S(t)} = \frac{\beta S(t) \frac{I(t)}{N}}{S(t)} = \beta \frac{I(t)}{N}\]</span></p>
-<p>When incidence peaks:</p>
-<p><span class="math display">\[\begin{align}
-C'(t) &amp;= 0 \\
-\Leftrightarrow \frac{\beta}{N} \left[ S'(t)I(t) + S(t)I'(t) \right] &amp;= 0 \\
-\Leftrightarrow S'(t)I(t) + S(t)I'(t) &amp;= 0 \\
-\Leftrightarrow S(t)I'(t) &amp;= -S'(t)I(t)
-\end{align}\]</span></p>
-<p>Because <span class="math inline">\(S'(t)\)</span> is negative, <span class="math inline">\(-S'(t)I(t) &gt; 0\)</span>, therefore <span class="math inline">\(I'(t) &gt; 0\)</span>.</p>
-<p><span class="math inline">\(A'(t) = \frac{\beta}{N} I'(t)\)</span>, this proves that <span class="math inline">\(A'(t) &gt; 0\)</span> when incidence peaks, meaning attack rate is still increasing.</p>
-<p>When incidence peaks, attack rate is still increasing, so before incidence peaks (incidence is increasing), attack rate is guaranteed to increase.</p>
+<p>Day 20 (The Peak):</p>
+<ul>
+<li>Susceptible pool at start of day: 10,000</li>
+<li>New cases today: 1,000</li>
+<li>Attack rate: 1,000 / 10,000 = 10%</li>
+</ul>
+<p>Day 21 (Cases start to drop):</p>
+<ul>
+<li>Susceptible pool at start of day: 9,000 (because 10,000 - 1,000)</li>
+<li>New cases today: 950 (cases have dropped)</li>
+<li>Attack rate: 950 / 9,000 = 10.5%</li>
+</ul>
 <p>In an open population model, when the birth rate or migration is very high (higher than the rate of depletion), the denominator increase faster and can make the attack rate drops.</p>
 <div class="cell">
 <details class="code-fold">
