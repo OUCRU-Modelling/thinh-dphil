@@ -33,6 +33,31 @@ Day 21 (Cases start to drop):
 - New cases today: 950 (cases have dropped)
 - Attack rate: 950 / 9,000 = 10.5%
 
+**Prove this**:
+
+The rate of new infections (incidence):
+
+$$C(t) = -\frac{dS}{dt} = \beta S(t) \frac{I(t)}{N}$$
+
+The attack rate:
+
+$$A(t) = \frac{C(t)}{S(t)} = \frac{\beta S(t) \frac{I(t)}{N}}{S(t)} = \beta \frac{I(t)}{N}$$
+
+When incidence peaks:
+
+$$\begin{align}
+C'(t) &= 0 \\
+\Leftrightarrow \frac{\beta}{N} \left[ S'(t)I(t) + S(t)I'(t) \right] &= 0 \\
+\Leftrightarrow S'(t)I(t) + S(t)I'(t) &= 0 \\
+\Leftrightarrow S(t)I'(t) &= -S'(t)I(t)
+\end{align}$$
+
+Because $S'(t)$ is negative, $-S'(t)I(t) > 0$, therefore $I'(t) > 0$.
+
+$A'(t) = \frac{\beta}{N} I'(t)$, this proves that $A'(t) > 0$ when incidence peaks, meaning attack rate is still increasing.
+
+When incidence peaks, attack rate is still increasing, so before incidence peaks (incidence is increasing), attack rate is guaranteed to increase.
+
 In an open population model, when the birth rate or migration is very high (higher than the rate of depletion), the denominator increase faster and can make the attack rate drops.
 
 ```{r}
