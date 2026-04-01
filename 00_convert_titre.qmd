@@ -1,0 +1,181 @@
+---
+title: "Convert OD to titre (SERION assay)"
+format: html
+---
+
+## Constant
+
+Path to data:
+
+```{r}
+path2data <- paste0("C:/Users/ongph/github/data")
+```
+
+Files names:
+
+```{r}
+inp_sero <- "sero/raw/measles_elisa_Aug2025.xlsx"
+```
+
+## Packages
+
+Required packages:
+
+```{r}
+# Edit this only
+required <- c("tidyverse", "lubridate", "janitor", "openxlsx")
+```
+
+Installing those that are not installed yet:
+
+```{r}
+to_install <- required[! required %in% installed.packages()[, "Package"]]
+if (length(to_install)) install.packages(to_install)
+```
+
+Loading the packages for interactive use:
+
+```{r}
+invisible(sapply(required, library, character.only = TRUE))
+```
+
+## Functions
+
+Convert OD to titre
+
+```{r}
+calc_titre <- function(a, b, c, d, od, manustd, ourstd) {
+  exp(c - log((d - a)/(od * manustd / ourstd - a) - 1) / b)
+}
+```
+
+## Data
+
+Read raw data:
+
+```{r}
+df <- file.path(path2data, inp_sero) |> 
+  read.xlsx(sheet = 2) |> 
+  clean_names()
+```
+
+## Convert OD to titre
+
+Convert:
+
+```{r}
+df <- df |> 
+  # Remove empty wells
+  filter(!is.na(results)) |> 
+  mutate(
+    # Subtract blank
+    neg = neg - blank,
+    std_1 = std_1 - blank,
+    std_2 = std_2 - blank,
+    results = results - blank,
+    # Compute mean of 2 standard samples
+    std_mean = rowMeans(pick(starts_with("std")), na.rm = TRUE),
+    # Convert to titre
+    titre = calc_titre(
+      a = a, 
+      b = b, 
+      c = c, 
+      d = d, 
+      od = results, 
+      manustd = std_ref, 
+      ourstd = std_mean
+    )
+  )
+```
+
+Determine cutoff value for positive:
+
+```{r}
+cutoff_val <- 200
+```
+
+Define sample positive
+
+```{r}
+df <- df |> 
+  mutate(
+    pos = if_else(titre > cutoff_val, 1, 0)
+  )
+```
+
+## Quality control
+
+The substrate blank must be OD < 0.25
+
+```{r}
+df |> 
+  filter(blank >= 0.25)
+```
+
+The negative control must be negative
+
+```{r}
+df |> 
+  distinct(neg, .keep_all = TRUE) |> 
+  mutate(
+    titre = calc_titre(
+      a = a, 
+      b = b, 
+      c = c, 
+      d = d, 
+      od = neg, # convert the neg OD
+      manustd = std_ref, 
+      ourstd = std_mean
+    ),
+    pos = if_else(titre > cutoff_val, 1, 0)
+  ) |> 
+  # Check if any neg is pos
+  filter(pos == 1)
+```
+
+The mean OD-value of the standard serum must be within the validity range
+
+```{r}
+df |> 
+  filter(std_mean < lower | std_mean > upper)
+```
+
+## Clean metadata columns
+
+```{r}
+df <- df |> 
+  mutate(
+    across(c(dob, date_collect), dmy)
+  )
+```
+
+## Save output files
+
+Save file RDS
+
+```{r}
+df |> 
+  saveRDS(
+    file = file.path(
+      path2data, 
+      inp_sero |> 
+        str_replace("sero/raw", "sero/cleaned") |> 
+        str_replace("\\.xlsx$", ".rds")
+    )
+  )
+```
+
+Save file xlsx
+
+```{r}
+df |> 
+  write.xlsx(
+    file = file.path(
+      path2data, 
+      inp_sero |> str_replace("sero/raw", "sero/cleaned")
+    ),
+    rowNames = FALSE
+  )
+```
+
+
