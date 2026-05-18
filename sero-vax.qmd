@@ -10,9 +10,48 @@ library(deSolve)
 library(tidyverse)
 library(scales)
 library(patchwork)
+library(readxl)
+library(janitor)
 ```
 
 In HCDC data, date of reporting and date of admission is not NA, but onset date can have NA values.
+
+## Measles in HCMC 2024-2025
+
+```{r}
+df <- read_excel("C:/Users/ongph/github/data/measles/measles_cases_2019-12.2025.xlsx", sheet = 4, col_types = "text") |> 
+  clean_names() |> 
+  mutate(ngay_nv = as.Date(as.numeric(ngay_nv), origin = "1899-12-30"))
+```
+
+```{r}
+df |> 
+  mutate(week_nv = floor_date(ngay_nv, unit = "week", week_start = 1)) |> 
+  count(week_nv) |> 
+  ggplot(aes(x = week_nv, y = n)) +
+  # Using a professional dark blue-grey; width = 7 makes the weekly bars touch
+  geom_col(fill = "#374F77", width = 7) + 
+  # Set the x-axis to show yearly breaks
+  scale_x_date(
+    date_breaks = "1 year", 
+    date_labels = "%Y",
+    expand = expansion(mult = c(0.02, 0.02)) # Slight padding so bars don't clip the edges
+  ) +
+  labs(
+    x = "Week of admission", 
+    y = NULL
+  ) +
+  theme_classic() +
+  theme(
+    # Optional: adjust axis text size if needed
+    axis.text = element_text(size = 11, colour = "black"),
+    plot.margin = margin(t = 5, r = 15, b = 5, l = 5, unit = "pt")
+  )
+# ggsave("figs/measles_cases_1825.png", width = 5, height = 2, bg = "white", dpi = 300)
+```
+
+
+
 
 ## Attack rate
 

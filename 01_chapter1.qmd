@@ -1,0 +1,1029 @@
+---
+title: "Chapter 1"
+format: html
+execute: 
+  eval: false
+---
+
+## Constant
+
+Path to data:
+
+```{r}
+path2data <- paste0("C:/Users/ongph/github/data")
+```
+
+Files names:
+
+```{r}
+# Case notification
+cases_file <- "measles/measles_cases_2019-12.2025.xlsx"
+
+# Serology
+sero_file <- "sero/cleaned/measles_elisa_hcmc_children.rds"
+
+# Vaccination coverage
+## HCMC
+vax_hcmc_file <- "vax/vaxreg_hcmc_measles.rds"
+## Vietnam
+vax_vn_file <- "vax/vaxvn_2023.xlsx"
+
+# Population metadata
+map_hcmc_file <- "map/gadm41_hcmc_district.rds"
+map_vn_file <- "map/gadm41_vn.rds"
+census_file <- "census2019_hcm.rds"
+```
+
+## Packages
+
+Required packages:
+
+```{r}
+required <- c("openxlsx", "janitor", "tidyverse", "scales", "mgcv", "stringi", "sf", "binom", "ggsci", "ggspatial", "patchwork", "zoo")
+
+# Installing those that are not installed yet:
+to_install <- required[! required %in% installed.packages()[, "Package"]]
+if (length(to_install)) install.packages(to_install)
+
+# Loading the packages for interactive use:
+invisible(sapply(required, library, character.only = TRUE))
+```
+
+## Functions
+
+Clean Vietnamese district and province name
+
+```{r}
+clean_district <- function(x) {
+  x |>
+    stri_trans_general("Latin-ASCII") |> 
+    str_to_lower() |>                      
+    str_squish() |>                        
+    str_replace_all("đ", "d") |>
+    str_remove("^(quan |huyen |thanh pho |tp )")
+}
+
+clean_province <- function(x) {
+  x |>
+    stri_trans_general("Latin-ASCII") |> 
+    str_to_lower() |>                      # Fix case mismatches (e.g., Ha Noi vs ha noi)
+    str_squish() |>                        # Remove trailing, leading, or double spaces
+    str_replace_all("đ", "d")              # Catch the Vietnamese 'đ' if the ASCII conversion misses it
+}
+```
+
+Calculate vaccination coverage
+
+```{r}
+calc_cov <- function(data, age_expr, date_col, dose_lbl) {
+  data |> 
+    filter({{ age_expr }}) |> 
+    group_by(district_blank) |> 
+    summarise(
+      pos = sum({{ date_col }} <= "2024-04-01", na.rm = TRUE), 
+      n = n(), 
+      .groups = "drop"
+    ) |> 
+    mutate(
+      cov = pos / n,
+      dose = dose_lbl,
+      ci_low = binom.wilson(pos, n)$lower,
+      ci_high = binom.wilson(pos, n)$upper
+    )
+}
+```
+
+Plot vaccination coverage
+
+```{r}
+plot_cov <- function(data) {
+  ggplot(data) +
+    geom_sf(
+      aes(fill = cov), 
+      colour = "grey30",   
+      linewidth = 0.15
+    ) +
+    scale_fill_gsea(
+      reverse = TRUE,
+      labels = scales::percent_format(accuracy = 1),
+      na.value = "grey90"
+    ) +
+    theme_void(base_family = "sans", base_size = 11) +
+    theme(
+      legend.position = "right",
+      legend.key.height = unit(1.2, "cm"),
+      legend.key.width = unit(0.3, "cm"),
+      legend.title = element_text(face = "bold", size = 9),
+      plot.margin = margin(5, 5, 5, 5)
+    ) +
+    labs(fill = "Coverage\n", title = NULL)
+}
+```
+
+Correct seroprevalence by sensitivity and specificity
+
+```{r}
+prev_correct <- function(est_val, sens, spec) {
+  (est_val + spec - 1) / (sens + spec - 1)
+}
+```
+
+Predict with confidence interval
+
+```{r}
+predict_ci <- function(model, data, var, ci = 0.95, length = 1000) {
+  p <- (1 - ci) / 2
+  link_inv <- model$family$linkinv
+  n <- nrow(data) - length(model$coefficients)
+  vals <- seq(from = min(data[[var]], na.rm = T), to = max(data[[var]], na.rm = T), length.out = length)
+  df <- data.frame(col = vals)
+  colnames(df) <- var
+  
+  pred <- data.frame(predict(model, df, se.fit = TRUE))
+  pred[[var]] <- df[[var]]
+  pred$lwr <- link_inv(pred$fit + qt(p, n) * pred$se.fit)
+  pred$upr <- link_inv(pred$fit + qt(1 - p, n) * pred$se.fit)
+  pred$fit <- link_inv(pred$fit)
+  pred
+}
+```
+
+## Data
+
+Map:
+
+```{r}
+df_map_hcmc <- file.path(path2data, map_hcmc_file) |> 
+  readRDS() |> 
+  mutate(district_blank = clean_district(district))
+
+df_map_vn <- file.path(path2data, map_vn_file) |> 
+  readRDS() |> 
+  mutate(province_blank = clean_province(province))
+```
+
+Census:
+
+```{r}
+df_census <- file.path(path2data, census_file) |> 
+  readRDS()
+
+df_census_age <- df_census |> 
+  group_by(age) |>
+  summarise(n_census = sum(n), .groups = "drop")
+
+df_census_district <- df_census |> 
+  group_by(district) |>
+  summarise(n_census = sum(n), .groups = "drop") |> 
+  mutate(
+    district = clean_district(district)
+  )
+```
+
+Case report data:
+
+```{r}
+df_case <- file.path(path2data, cases_file) |>
+  read.xlsx(sheet = 4) |>
+  clean_names() |>
+  mutate(
+    ngay_nv = as.Date(as.numeric(ngay_nv), origin = "1899-12-30"),
+    ngay_sinh = as.Date(as.numeric(ngay_sinh), origin = "1899-12-30"),
+    age = time_length(interval(ngay_sinh, ngay_nv), "year"),
+    district = clean_district(quan_huyen)
+  )
+```
+
+Serology:
+
+```{r}
+df_sero <- file.path(path2data, sero_file) |> 
+  readRDS()
+
+# Get children in vaccination age in 3 hospitals, sampling between 01-08-2022 to 30-04-2024
+df_sero_3ch <- df_sero |> 
+  filter(
+    exact_age >= 9/12,
+    hospital %in% c("Children's hospital 1", "Children's hospital 2", "City Children's Hospital"),
+    date_collection <= dmy("30-04-2024"),
+    date_collection >= dmy("01-08-2022")
+  ) |> 
+  mutate(
+    age_5y = if_else(exact_age < 5, "<5", ">=5"),
+    age_5y = fct_relevel(age_5y, "<5", ">=5"),
+    age_ceiling = ceiling(exact_age)
+  ) |> 
+  left_join(df_census, by = join_by(age_ceiling == age)) |> 
+  mutate(
+    weight = n_census/mean(n_census)
+  )
+
+# Children < 9 month-old
+df_sero_infant <- df_sero |> 
+  filter(exact_age < 9/12)
+```
+
+Vaccination coverage
+
+```{r}
+df_vax_hcmc <- file.path(path2data, vax_hcmc_file) |> 
+  readRDS() |> 
+  mutate(district_blank = clean_district(district))
+
+df_vax_vn <- file.path(path2data, vax_vn_file) |> 
+  read.xlsx() |> 
+  mutate(province_blank = clean_province(province))
+```
+
+## Seroprevalence vs coverage
+
+Calculate daily incidence rate by district for the 2024 epidemic (starts from 1 April 2024)
+
+```{r}
+df_incidence_district <- df_case |>
+  filter(
+    ngay_nv >= dmy("01-04-2024"),
+    district %in% df_census_district$district
+  ) |>
+  group_by(district, ngay_nv) |>
+  summarise(n_cases = n(), .groups = "drop") |>
+  
+  # Complete the time series so days with 0 cases are included
+  complete(district,
+           ngay_nv = seq(min(ngay_nv), max(ngay_nv), by = "1 day"),
+           fill = list(n_cases = 0)) |>
+  
+  # Join with census data to get population
+  left_join(df_census_district, by = "district") |>
+  
+  # Calculate daily and cumulative attack rates (per 100,000)
+  group_by(district) |>
+  mutate(
+    cum_cases = cumsum(n_cases),
+    cum_ar = (cum_cases / n_census) * 100000,
+    cum_ar_7day = rollmean(cum_ar, k = 7, fill = NA, align = "right")
+  ) |>
+  ungroup() |> 
+  mutate(region = case_when(
+    str_detect(district, "binh chanh|binh tan") ~ "west",
+    str_detect(district, "hoc mon|12|cu chi") ~ "north",
+    str_detect(district, "thu duc") ~ "east",
+    str_detect(district, "nha be|7|can gio") ~ "south",
+    .default = "central"), # the rest is central
+    region = factor(region, levels = c("west", "north", "east", "south", "central"))
+  )
+```
+
+
+```{r}
+df_incidence_district |>
+  # Handle 0s before logging, as log(0) is -Inf
+  filter(cum_ar_7day > 0) |> 
+  ggplot(aes(x = ngay_nv, y = cum_ar_7day, color = region, group = district)) +
+  geom_line(alpha = 0.6) +
+  scale_y_log10() +
+  scale_color_startrek() +
+  labs(
+    x = "Date of admission",
+    y = "Cumulative AR (log10 scale)",
+    color = "District"
+  ) +
+  theme_classic() +
+  theme(
+    legend.position = "bottom"
+  )
+```
+
+Compute seroprevalence by district
+
+```{r}
+df_seroprev_district <- df_sero_3ch |> 
+  mutate(
+    # equivocal is considered negative
+    pos = if_else(result == "positive", 1, 0)
+  ) |> 
+  group_by(district) |> 
+  summarise(
+    pos = sum(pos),
+    n = n(),
+    cov_sero = pos / n,
+    ci_low_sero  = binom::binom.wilson(pos, n)$lower,
+    ci_high_sero = binom::binom.wilson(pos, n)$upper
+  )
+```
+
+Compute coverage by district in December 2023.
+
+1st dose:
+
+```{r}
+df_cov_m1 <- df_vax_hcmc |>
+  mutate(age = decimal_date(dmy("01-04-2024")) - decimal_date(dob)) |>
+  filter(age >= 9 / 12, age <= 5) |>
+  mutate(is_m1 = date_m1 <= dmy("01-04-2024")) |>
+  group_by(district) |>
+  summarise(
+    pos = sum(is_m1, na.rm = T),
+    n = n(),
+    cov = pos / n,
+    ci_low  = binom::binom.wilson(pos, n)$lower,
+    ci_high = binom::binom.wilson(pos, n)$upper,
+    dose = "1st"
+  )
+```
+
+2nd dose:
+
+```{r}
+df_cov_m2 <- df_vax_hcmc |>
+  mutate(age = decimal_date(dmy("01-04-2024")) - decimal_date(dob)) |>
+  filter(age >= 18/12, age <= 5) |>
+  mutate(is_m2 = date_m2 <= dmy("01-04-2024")) |>
+  group_by(district) |>
+  summarise(
+    pos = sum(is_m2, na.rm = T),
+    n = n(),
+    cov = pos / n,
+    ci_low  = binom::binom.wilson(pos, n)$lower,
+    ci_high = binom::binom.wilson(pos, n)$upper,
+    dose = "2nd"
+  )
+```
+
+Plot the inconsistency:
+
+```{r}
+df_plot <- rbind(df_cov_m1, df_cov_m2) |> 
+  left_join(df_seroprev_district, by = "district")
+
+df_plot |> 
+  ggplot(aes(x = cov, y = cov_sero)) +
+  # Reference line for perfect consistency
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey50") +
+  
+  # Error bars for Y (seroprevalence) and X (reported coverage)
+  geom_errorbar(aes(ymin = ci_low_sero, ymax = ci_high_sero), width = 0, alpha = 0.5) +
+  geom_errorbarh(aes(xmin = ci_low, xmax = ci_high), height = 0, alpha = 0.5) +
+  
+  # Facet by dose type
+  facet_wrap(~dose, labeller = as_labeller(c(`1st` = "1st dose", `2nd` = "2nd dose")), scale = "free") +
+  
+  labs(
+    x = "Vaccination coverage",
+    y = "Seroprevalence"
+  ) +
+  theme_bw()
+
+ggsave("figs/chap1/seroprev_vs_cov.png", width = 5, height = 3, dpi = 300)
+```
+
+
+## Calculate expected seroprevalence from vaccination coverage
+
+
+
+## Compare empirical seroprevalence with this expected seroprevalence
+
+## Age distribution among cases
+
+```{r}
+#| fig-height: 2.5
+#| fig-width: 7
+
+df_case |> 
+  filter(ngay_nv >= dmy("01-07-2018") & ngay_nv < dmy("01-04-2020")) |>
+  mutate(
+    week = floor_date(ngay_nv, "week"),
+    age_group = case_when(
+      age < 5 ~ "<5",
+      age >= 5 & age <= 15 ~ "5-15",
+      age > 15 ~ ">15"
+    ),
+    age_group = fct_relevel(age_group, "<5", "5-15", ">15") 
+  ) |>
+  drop_na(week, age_group) |>
+  count(week, age_group) |>
+  mutate(percentage = n / sum(n), .by = week) |>
+  ggplot(aes(x = week, y = percentage)) +
+  geom_col(
+    aes(fill = age_group), 
+    width = 7, 
+    # This keeps <5 at the bottom of the bars
+    position = position_stack(reverse = TRUE), 
+    colour = "white",
+    linewidth = 0.2
+  ) + 
+  scale_fill_manual(
+    values = c("<5" = "#56B4E9", "5-15" = "#E69F00", ">15" = "#009E73")
+  ) +
+  # This flips the legend to match the bars
+  guides(fill = guide_legend(reverse = TRUE)) + 
+  annotate(
+    "rect", 
+    xmin = dmy("01-12-2018"), 
+    xmax = dmy("31-05-2019"), 
+    ymin = 0, 
+    ymax = 1, 
+    fill = "grey90", 
+    alpha = 0.5      
+  ) +
+  geom_vline(
+    xintercept = c(dmy("01-12-2018"), dmy("31-05-2019")),
+    linetype = "dashed",
+    colour = "black",
+    linewidth = 0.6
+  ) +
+  scale_y_continuous(
+    labels = label_percent(), 
+    limits = c(0, 1),
+    breaks = seq(0, 1, by = 0.25),
+    expand = c(0, 0)
+  ) +
+  scale_x_date(
+    date_breaks = "2 months", 
+    date_labels = "%b\n%Y", 
+    expand = expansion(mult = c(0.01, 0.01))
+  ) +
+  labs(
+    x = "Admission week",
+    y = "Proportion of cases",
+    fill = "Age group"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_line(colour = "grey90", linewidth = 0.4),
+    axis.line.x = element_line(colour = "black", linewidth = 0.6),
+    axis.ticks.x = element_line(colour = "black"),
+    axis.text = element_text(colour = "black"),
+    axis.title = element_text(face = "bold"),
+    legend.position = "right", # Moved to the right (optional, see note below)
+    legend.title = element_text(face = "bold"),
+    plot.margin = margin(t = 15, r = 15, b = 10, l = 10) 
+  )
+
+# ggsave("figs/measles_age_distr_2018.png", width = 7, height = 2.5, dpi = 300, bg = "white")
+```
+
+## Vaccination coverage
+
+HCMC coverage
+
+```{r}
+vax_base <- df_vax_hcmc |> 
+  mutate(age_y = time_length(interval(dob, ymd("2024-04-01")), "years"))
+
+map_m1 <- df_map_hcmc |> 
+  left_join(calc_cov(vax_base, age_y >= 9/12 & age_y <= 5, date_m1, "1st"), by = "district_blank")
+
+map_m2 <- df_map_hcmc |> 
+  left_join(calc_cov(vax_base, age_y >= 18/12 & age_y < 5, date_m2, "2nd"), by = "district_blank")
+
+plot_m1 <- plot_cov(map_m1) + labs(fill = NULL)
+
+plot_m2 <- plot_cov(map_m2) + labs(fill = NULL)
+
+# ggsave("figs/hcmc_coverage_dose1.png", plot = plot_m1, width = 2.5, height = 2.5, bg = "white")
+# ggsave("figs/hcmc_coverage_dose2.png", plot = plot_m2, width = 2.5, height = 2.5, bg = "white")
+```
+
+Coverage in the south
+
+```{r}
+# 1. Define the raw list
+province_south_raw <- c("Bình Dương", "Bình Phước", "Tây Ninh", "Bà Rịa Vũng Tàu", "Đồng Nai", "Long An", "Tiền Giang", "Bến Tre", "Vĩnh Long", "Trà Vinh", "Đồng Tháp", "Hậu Giang", "An Giang", "Kiên Giang", "Bạc Liêu", "Sóc Trăng", "Cà Mau", "Hồ Chí Minh", "Cần Thơ")
+
+# 2. Clean the list using the exact same logic applied to your dataframe
+province_south_blank <- province_south_raw |>
+  stri_trans_general("Latin-ASCII") |> 
+  str_to_lower() |> 
+  str_squish() |> 
+  str_replace_all("đ", "d")
+
+# 3. Join the data and filter for only the Southern provinces
+map_south <- df_map_vn |> 
+  left_join(df_vax_vn, by = "province_blank") |> 
+  filter(province_blank %in% province_south_blank)
+
+# 4. Generate the publication-grade plot
+plot_measles_south_highlight <- ggplot() +
+  # 1. Base map of all Southern provinces
+  geom_sf(
+    data = map_south,
+    aes(fill = measles_pct), 
+    colour = "grey30",   
+    linewidth = 0.15
+  ) +
+  # 2. Highlight layer specifically for Ho Chi Minh
+  geom_sf(
+    data = map_south |> filter(province_blank == "ho chi minh"),
+    fill = NA,          # Keeps the map colour visible underneath
+    colour = "yellow",     # High-contrast border colour
+    linewidth = 0.8     # Thicker line to make it pop
+  ) +
+  scale_fill_gsea(
+    reverse = TRUE,
+    labels = scales::percent_format(scale = 1, accuracy = 1), 
+    na.value = "grey90"
+  ) +
+  theme_void(base_family = "sans", base_size = 11) +
+  theme(
+    legend.position = "right",
+    legend.key.height = unit(1.2, "cm"),
+    legend.key.width = unit(0.3, "cm"),
+    legend.title = element_text(face = "bold", size = 9),
+    plot.margin = margin(5, 5, 5, 5)
+  ) +
+  labs(fill = NULL, title = NULL)
+
+# ggsave("figs/south_vn_measles.png", plot = plot_measles_south_highlight, width = 3, height = 3, dpi = 300, bg = "white")
+```
+
+## Hospital catchment
+
+```{r}
+sero_summary <- df_sero |>
+  mutate(district_blank = clean_district(district)) |>
+  count(hospital, district_blank) |>      # Shortcut for group_by() + summarise(n = n())
+  group_by(hospital) |>
+  mutate(pct = n / sum(n)) |>             # Calculate proportion within each hospital
+  ungroup()
+
+# 3. Split the data into a list of dataframes (one per hospital)
+sero_list <- split(sero_summary, sero_summary$hospital)
+
+# 4. Define the plotting function
+# imap() passes the dataframe first, and the list name (hospital) second
+plot_hospital_map <- function(hosp_data, hosp_name) {
+  
+  map_data <- df_map_hcmc |> 
+    left_join(hosp_data, by = "district_blank") |>
+    mutate(pct = replace_na(pct, 0)) 
+  
+  ggplot(map_data) +
+    geom_sf(
+      aes(fill = pct), 
+      colour = "grey30",   
+      linewidth = 0.15
+    ) +
+    # Replace the GSEA scale with distiller
+    scale_fill_distiller(
+      palette = "Reds", 
+      direction = 1, # 1 forces light colors for low values, dark for high
+      labels = scales::percent_format(scale = 100, accuracy = 1), 
+      na.value = "grey90"
+    ) +
+    theme_void(base_family = "sans", base_size = 11) +
+    theme(
+      legend.position = "right",
+      legend.key.height = unit(1.2, "cm"),
+      legend.key.width = unit(0.3, "cm"),
+      legend.title = element_text(face = "bold", size = 9),
+      plot.margin = margin(5, 5, 5, 5)
+    ) +
+    labs(
+      fill = NULL, 
+      title = NULL
+    )
+}
+
+# 5. Apply the function across all hospitals
+hospital_plots <- imap(sero_list, plot_hospital_map)
+
+ggsave("figs/catchment_ch1.png", plot = hospital_plots[[1]], width = 2.5, height = 2.5, dpi = 300, bg = "white")
+ggsave("figs/catchment_ch2.png", plot = hospital_plots[[2]], width = 2.5, height = 2.5, dpi = 300, bg = "white")
+ggsave("figs/catchment_cch.png", plot = hospital_plots[[3]], width = 2.5, height = 2.5, dpi = 300, bg = "white")
+
+```
+
+
+## Seroprevalence per hospital
+
+Sensitivity, specificity and critical vaccination threshold
+
+```{r}
+sens <- 0.99
+spec <- 0.95
+critp <- 0.95
+```
+
+Aggregate seroprevalence with confidence intervals
+
+```{r}
+agg_sero <- df_sero |> 
+  group_by(hospital, age_5y, period_collect) |>
+  summarise(
+    npos = sum(pos, na.rm = TRUE),
+    ntot = n(),
+    prev = npos / ntot,
+    # Safety: prop.test fails if ntot is 0
+    ci_lwr = if_else(ntot > 0, prop.test(npos, ntot, conf.level = 0.95)$conf.int[1], NA_real_),
+    ci_upr = if_else(ntot > 0, prop.test(npos, ntot, conf.level = 0.95)$conf.int[2], NA_real_),
+    .groups = "drop"
+  ) |>
+  mutate(
+    prev_true = prev_correct(prev, sens, spec),
+    lwr = prev_correct(ci_lwr, sens, spec),
+    upr = prev_correct(ci_upr, sens, spec)
+  )
+```
+
+Plot
+
+```{r}
+# Set color palette
+pals <- hue_pal()(3)
+
+l1 <- map(unique(df_sero$hospital), \(current_hosp) {
+  
+  # Filter data for the current hospital in the loop
+  df_tmp <- df_sero |> filter(hospital == current_hosp)
+  tmp_agg_sero <- agg_sero |> filter(hospital == current_hosp)
+  
+  # Helper function to fit GAM and compute adjusted predictions
+  fit_and_adjust_gam <- function(data_subset) {
+    mod <- gam(
+      pos ~ s(as.numeric(date_collect)),
+      family = binomial,
+      weights = weight,
+      data = data_subset,
+      method = "REML"
+    )
+    
+    predict_ci(model = mod, data = data_subset, var = "date_collect") |>
+      mutate(
+        fit_true = prev_correct(fit, sens, spec),
+        lwr_true = prev_correct(lwr, sens, spec),
+        upr_true = prev_correct(upr, sens, spec)
+      )
+  }
+  
+  # Fit the two age groups
+  pred1 <- fit_and_adjust_gam(df_tmp |> filter(age_5y == "<5"))
+  pred2 <- fit_and_adjust_gam(df_tmp |> filter(age_5y == ">=5"))
+  
+  # Define the blue rectangle for the latest month
+  rect_plot <- tibble(
+    xmin = floor_date(max(df_tmp$date_collect, na.rm = TRUE), "month"),
+    xmax = ceiling_date(max(df_tmp$date_collect, na.rm = TRUE), "month") - days(1),
+    ymin = -0.05,
+    ymax = 1.05
+  )
+  
+  # Define dynamic x-axis breaks based strictly on this hospital's collection periods
+  ym_lab <- tibble(
+    date_collect = sort(unique(df_tmp$period_collect))
+  ) |>
+    mutate(
+      year = year(date_collect),
+      add_year = !duplicated(year)
+    )
+  
+  # Build the plot
+  ggplot(df_tmp) +
+    geom_hline(yintercept = critp, col = "darkred", linetype = "dashed") +
+    geom_point(aes(x = date_collect, y = pos), shape = 124, alpha = 0.3) +
+    
+    geom_line(data = pred1, aes(x = date_collect, y = fit_true, color = "a")) +
+    geom_line(data = pred2, aes(x = date_collect, y = fit_true, color = "b")) +
+    
+    geom_pointrange(
+      data = tmp_agg_sero |> filter(age_5y == "<5"), 
+      aes(x = period_collect + days(15), y = prev_true, ymin = lwr, ymax = upr, color = "a"), 
+      size = 0.3, alpha = 0.5
+    ) +
+    geom_pointrange(
+      data = tmp_agg_sero |> filter(age_5y == ">=5"), 
+      aes(x = period_collect + days(15), y = prev_true, ymin = lwr, ymax = upr, color = "b"), 
+      size = 0.3, alpha = 0.5
+    ) +
+    
+    geom_ribbon(data = pred1, aes(x = date_collect, ymin = lwr_true, ymax = upr_true, fill = "a"), alpha = 0.15) +
+    geom_ribbon(data = pred2, aes(x = date_collect, ymin = lwr_true, ymax = upr_true, fill = "b"), alpha = 0.15) +
+    
+    geom_rect(data = rect_plot, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax), fill = "transparent", color = "blue") +
+    
+    scale_y_continuous(
+      breaks = seq(0, 1, 0.2), 
+      limits = c(-0.1, 1.1), 
+      labels = scales::label_percent(suffix = "")
+    ) +
+    scale_x_date(
+      breaks = ym_lab$date_collect,
+      labels = format(ym_lab$date_collect, ifelse(ym_lab$add_year, "%b\n%Y", "%b")),
+      expand = expansion(mult = c(0.02, 0.02)) 
+    ) +
+    scale_color_manual(values = pals[c(2, 3)], breaks = c("a", "b"), labels = c("<5", ">=5")) +
+    scale_fill_manual(values = pals[c(2, 3)], breaks = c("a", "b"), labels = c("<5", ">=5")) +
+    labs(
+      x = NULL, 
+      y = "Seroprevalence", 
+      fill = "Age", 
+      color = "Age", 
+      title = current_hosp
+    ) +
+    theme_light() +
+    theme(
+      strip.placement = "outside",
+      strip.clip = "off",
+      strip.text = element_text(color = "grey30"),
+      strip.background = element_rect(fill = NA, color = NA),
+      panel.spacing = unit(0, "cm"),
+      panel.border = element_rect(color = NA),
+      legend.position = "none",
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(),
+      axis.line = element_line(color = "black")
+    )
+})
+
+# ggsave(plot = l1[[1]], "figs/ch1.png", width = 5.5, height = 1.6, dpi = 300, bg = "white")
+# ggsave(plot = l1[[2]], "figs/cch.png", width = 5.5, height = 1.6, dpi = 300, bg = "white")
+# ggsave(plot = l1[[3]], "figs/ch2.png", width = 5.5, height = 1.6, dpi = 300, bg = "white")
+library(patchwork)
+
+# Turn the legend back on for the very first plot in your list
+l1[[1]] <- l1[[1]] + theme(legend.position = "right")
+
+# Wrap the entire list into a grid, and collect the guide (legend) to the bottom
+l1[[1]]
+
+# ggsave(plot = l1[[1]], "figs/seroprev_legend.png", width = 5.5, height = 1.6, dpi = 300, bg = "white")
+```
+
+All sero
+
+```{r}
+# 1. Fit the models
+mod1 <- gam(
+  pos ~ s(as.numeric(date_collection)),
+  family = binomial,
+  data = df_sero_all,
+  method = "REML"
+)
+
+mod_u5 <- gam(
+  pos ~ s(as.numeric(date_collection)),
+  family = binomial,
+  data = df_sero_all |> filter(exact_age < 5 | age_max < 5),
+  method = "REML"
+)
+
+mod_o5 <- gam(
+  pos ~ s(as.numeric(date_collection)),
+  family = binomial,
+  data = df_sero_all |> filter(exact_age >= 5 | age_max >= 5),
+  method = "REML"
+)
+
+# 2. Generate predictions
+# Assuming your predict_ci function returns columns like: date_collection, fit, lwr, upr
+pred1   <- predict_ci(model = mod1,   data = df_sero_all, var = "date_collection")
+pred_u5 <- predict_ci(model = mod_u5, data = df_sero_all, var = "date_collection")
+pred_o5 <- predict_ci(model = mod_o5, data = df_sero_all, var = "date_collection")
+
+# Combine into one dataframe for clean ggplot mapping
+pred_combined <- bind_rows(
+  pred1   |> mutate(age_group = "All ages"),
+  pred_u5 |> mutate(age_group = "Under 5"),
+  pred_o5 |> mutate(age_group = "5 and older")
+) |> 
+  mutate(
+    age_group = factor(age_group, levels = c("All ages", "Under 5", "5 and older")),
+    date_collection = as.Date(date_collection) # Converts POSIXct to Date
+  )
+
+# 3. Aggregate case data
+df_case_weekly <- df_case |> 
+  mutate(week_nv = floor_date(ngay_nv, unit = "week", week_start = 1)) |> 
+  count(week_nv)
+
+# 4. Calculate the scaling factor for the dual axis
+# We scale the 0-1 probabilities up to match the height of the maximum case count
+scale_factor <- max(df_case_weekly$n, na.rm = TRUE)
+
+# 5. Plot
+ggplot() +
+  # Layer 1: Case counts (bars) without alpha
+  geom_col(
+    data = df_case_weekly, 
+    aes(x = week_nv, y = n), 
+    fill = "#374F77", 
+    width = 7
+  ) + 
+  # Layer 2: GAM Confidence Intervals (ribbons)
+  geom_ribbon(
+    data = pred_combined,
+    aes(x = date_collection, ymin = lwr * scale_factor, ymax = upr * scale_factor, fill = age_group),
+    alpha = 0.3
+  ) +
+  # Layer 3: GAM Fits (lines)
+  geom_line(
+    data = pred_combined,
+    aes(x = date_collection, y = fit * scale_factor, colour = age_group)
+  ) +
+  scale_colour_manual(values = c(pals[[1]], pals[[2]], pals[[3]])) +
+  scale_fill_manual(values = c(pals[[1]], pals[[2]], pals[[3]])) +
+  geom_hline(
+    yintercept = 0.95 * scale_factor, 
+    linetype = "dashed", 
+    colour = "darkred", 
+    linewidth = 0.8
+  ) +
+  scale_x_date(
+    name = "Week of admission",
+    date_breaks = "1 year", 
+    date_labels = "%Y",
+    expand = expansion(mult = c(0.02, 0.02)) 
+  ) +
+  scale_y_continuous(
+    name = "Weekly case counts",
+    sec.axis = sec_axis(~ . / scale_factor, name = "Seroprevalence", labels = scales::percent)
+  ) +
+  theme_classic(base_family = "sans") +
+  theme(
+    axis.text = element_text(size = 11, colour = "black"),
+    legend.position = "top",
+    legend.title = element_blank(),
+    plot.margin = margin(t = 5, r = 15, b = 5, l = 5, unit = "pt")
+  )
+
+ggsave("figs/sero_2017_2024.png", width = 5, height = 2.5, dpi = 300, bg = "white")
+```
+
+
+## Case notification
+
+```{r}
+df_case |> 
+  mutate(week_nv = floor_date(ngay_nv, unit = "week", week_start = 1)) |> 
+  count(week_nv) |> 
+  ggplot(aes(x = week_nv, y = n)) +
+  # Using a professional dark blue-grey; width = 7 makes the weekly bars touch
+  geom_col(fill = "#374F77", width = 7) + 
+  # Set the x-axis to show yearly breaks
+  scale_x_date(
+    date_breaks = "1 year", 
+    date_labels = "%Y",
+    expand = expansion(mult = c(0.02, 0.02)) # Slight padding so bars don't clip the edges
+  ) +
+  labs(
+    x = "Week of admission", 
+    y = "Weekly case counts"
+  ) +
+  theme_classic() +
+  theme(
+    # Optional: adjust axis text size if needed
+    axis.text = element_text(size = 11, colour = "black"),
+    plot.margin = margin(t = 5, r = 15, b = 5, l = 5, unit = "pt")
+  )
+```
+
+```{r}
+df_case_summary <- df_case |> 
+  mutate(
+    # 1. Clean the hospital names
+    ten_bv = ten_bv |> 
+      stri_trans_general("Latin-ASCII") |> 
+      str_to_lower() |>                      
+      str_squish() |>                        
+      str_replace_all("đ", "d") |>
+      str_replace_all("\\bbv\\b", "benh vien"), # Expands standalone "bv" only
+    
+    # 2. Recode to specific hospital acronyms
+    ten_bv = case_match(
+      ten_bv,
+      "benh vien nhi dong 1" ~ "CH1",
+      "benh vien nhi dong 2" ~ "CH2",
+      "benh vien nhi dong thanh pho" ~ "CCH",
+      .default = NA_character_
+    ),
+    
+    # 3. Clean the district column
+    district_blank = clean_district(quan_huyen),
+    
+    # 4. Extract year and group into periods
+    year_adm = year(ngay_nv),
+    year_group = case_when(
+      year_adm %in% 2018:2020 ~ "2018-2020",
+      year_adm %in% 2024:2025 ~ "2024-2025",
+      .default = NA_character_ # Tags 2021-2023 or missing years as NA
+    )
+  ) |> 
+  # 5. Filter out unwanted hospitals and years
+  filter(
+    !is.na(ten_bv),
+    !is.na(year_group)
+  ) |> 
+  # 6. Count rows per hospital, district, and year group
+  count(ten_bv, district_blank, year_group, name = "n_cases") |> 
+  # Enforce your requirement: only keep districts that match the map
+  filter(district_blank %in% df_map_hcmc$district_blank) |>
+  # Generate a complete matrix so 0-count districts are explicitly recorded as 0
+  complete(
+    district_blank = unique(df_map_hcmc$district_blank),
+    ten_bv,
+    year_group,
+    fill = list(n_cases = 0)
+  ) |> 
+  # Drop any NA combinations if they slipped through
+  filter(!is.na(ten_bv), !is.na(year_group)) |> 
+  mutate(
+    ten_bv = factor(ten_bv, levels = c("CH1", "CH2", "CCH"), labels = c("Children's Hospital 1", "Children's Hospital 2", "City Children's Hospital"))
+  )
+
+map_cases <- df_map_hcmc |>
+  inner_join(df_case_summary, by = "district_blank")
+
+# 3. Plot the faceted map grid
+plot_cases <- ggplot(map_cases) +
+  geom_sf(
+    aes(fill = n_cases), 
+    colour = "grey30", 
+    linewidth = 0.15
+  ) +
+  # Use ColorBrewer's Blues palette (direction = 1 makes 0 light, high counts dark)
+  scale_fill_distiller(
+    palette = "Blues", 
+    direction = 1,
+    na.value = "grey90"
+  ) +
+  # Create a matrix layout: Hospitals on the y-axis, Year Groups on the x-axis
+  facet_grid(ten_bv ~ year_group, switch = "y") + 
+  theme_void(base_family = "sans", base_size = 11) +
+  theme(
+    legend.position = "left",
+    legend.key.width = unit(0.3, "cm"),
+    legend.title = element_text(face = "bold", size = 9, vjust = 0.8),
+    # Add spacing and bolding to the row/column labels
+    strip.text = element_text(face = "bold", size = 10, margin = margin(t = 5, b = 5, l = 5, r = 5)),
+    plot.margin = margin(10, 10, 10, 10)
+  ) +
+  labs(fill = "Case counts", title = NULL)
+
+ggsave(plot = plot_cases, "figs/hospital_case_counts.png", width = 5, height = 5, dpi = 300, bg = "white")
+```
+
+
+```{r}
+df_case |> 
+  filter(ngay_nv > dmy("01-04-2024") & ngay_nv < dmy("15-07-2024")) |> 
+  mutate(week_nv = floor_date(ngay_nv, unit = "week", week_start = 1)) |> 
+  count(week_nv) |> 
+  ggplot(aes(x = week_nv, y = n)) +
+  # Using a professional dark blue-grey; width = 7 makes the weekly bars touch
+  geom_col(fill = "#374F77", width = 7) + 
+  # Set the x-axis to show yearly breaks
+  scale_x_date(
+    date_breaks = "1 year", 
+    date_labels = "%Y",
+    expand = expansion(mult = c(0.02, 0.02)) # Slight padding so bars don't clip the edges
+  ) +
+  labs(
+    x = "Week of admission", 
+    y = NULL
+  ) +
+  theme_classic() +
+  theme(
+    # Optional: adjust axis text size if needed
+    axis.text = element_text(size = 11, colour = "black"),
+    plot.margin = margin(t = 5, r = 15, b = 5, l = 5, unit = "pt")
+  )
+
+# ggsave("figs/peak_2025.png", width = 3, height = 3, dpi = 300, bg = "transparent")
+```
+
+## Sero of infants
+
+```{r}
+df_sero_infant |> 
+  # 1. Convert age inline
+  mutate(age_month = age * 12) |> 
+  ggplot(aes(x = age_month, y = titre)) +
+  geom_hline(yintercept = 200, linetype = "dashed") +
+  # Added alpha to prevent overplotting with your raw points
+  geom_point(alpha = 0.4) + 
+  # 2. Fit and plot the GLM in one step
+  geom_smooth(
+    method = "glm",
+    method.args = list(family = Gamma(link = "log")),
+    level = 0.95,
+    colour = "blue" 
+  ) +
+  # Vaccination milestones
+  geom_vline(xintercept = 9, linetype = "dashed", colour = "#D55E00", linewidth = 0.7) +
+  geom_vline(xintercept = 12, linetype = "dashed", colour = "#0072B2", linewidth = 0.7) +
+  scale_y_continuous(breaks = c(200, 500, 1000, 1500, 2000)) +
+  scale_x_continuous(breaks = seq(0, 12, 2)) +
+  labs(
+    x = "Age (months)",
+    y = "Titer (mIU/mL)"
+  ) +
+  theme_classic()
+
+# ggsave("figs/infant.png", width = 5, height = 2, dpi = 300)
+```
+
+
+

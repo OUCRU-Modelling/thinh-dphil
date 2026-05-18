@@ -1,0 +1,65 @@
+---
+title: "Merge all serology files"
+format: html
+---
+
+## Constant
+
+Path to data:
+
+```{r}
+path2data <- paste0("C:/Users/ongph/github/data")
+```
+
+Files names:
+
+```{r}
+sero_dir <- "sero/cleaned"
+sero_files <- list.files(
+    path = file.path(path2data, sero_dir), 
+    pattern = "\\.rds$", 
+    full.names = TRUE
+  )
+```
+
+## Packages
+
+Required packages:
+
+```{r}
+# Edit this only
+required <- c("tidyverse", "janitor")
+```
+
+Installing those that are not installed yet:
+
+```{r}
+to_install <- required[! required %in% installed.packages()[, "Package"]]
+if (length(to_install)) install.packages(to_install)
+```
+
+Loading the packages for interactive use:
+
+```{r}
+invisible(sapply(required, library, character.only = TRUE))
+```
+
+## Functions
+
+## Data
+
+Read all .rds files in the data folder
+
+```{r}
+list_df <- sero_files |> 
+  map(readRDS) |> 
+  list_rbind()
+```
+
+## Merge files
+
+```{r}
+df <- list_df[[1]]
+df2 <- list_df[[2]]
+```
+

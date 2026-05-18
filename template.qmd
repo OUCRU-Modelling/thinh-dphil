@@ -1,0 +1,63 @@
+---
+title: "Template"
+format: html
+execute: 
+  eval: false
+---
+
+## Constant
+
+Path to data:
+
+```{r}
+path2data <- paste0("C:/Users/ongph/github/data")
+```
+
+Files names:
+
+```{r}
+cases_file <- "measles/measles_cases_2019-12.2025.xlsx"
+map_distric_file <- "map/gadm41_hcmc_district.rds"
+```
+
+## Packages
+
+Required packages:
+
+```{r}
+# Edit this only
+required <- c("readxl", "tidyverse", "janitor")
+```
+
+Installing those that are not installed yet:
+
+```{r}
+to_install <- required[! required %in% installed.packages()[, "Package"]]
+if (length(to_install)) install.packages(to_install)
+```
+
+Loading the packages for interactive use:
+
+```{r}
+invisible(sapply(required, library, character.only = TRUE))
+```
+
+## Functions
+
+```{r}
+source("code/inhouse_sero.R")
+```
+
+
+## Data
+
+Case report data:
+
+```{r}
+df_case <- file.path(path2data, cases_file) |> 
+  read_excel(sheet = 4, col_types = "text") |> 
+  clean_names() |> 
+  mutate(ngay_nv = as.Date(as.numeric(ngay_nv), origin = "1899-12-30"))
+```
+
+Map:

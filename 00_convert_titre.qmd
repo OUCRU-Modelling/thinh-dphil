@@ -1,6 +1,8 @@
 ---
 title: "Convert OD to titre (SERION assay)"
 format: html
+execute: 
+  eval: false
 ---
 
 ## Constant
@@ -14,7 +16,7 @@ path2data <- paste0("C:/Users/ongph/github/data")
 Files names:
 
 ```{r}
-inp_sero <- "sero/raw/measles_elisa_Aug2025.xlsx"
+inp_sero <- "sero/raw/measles_elisa_2025_women.xlsx"
 ```
 
 ## Packages
@@ -55,8 +57,12 @@ Read raw data:
 
 ```{r}
 df <- file.path(path2data, inp_sero) |> 
-  read.xlsx(sheet = 2) |> 
-  clean_names()
+  read.xlsx(sheet = 1) |> 
+  clean_names() |> 
+  # Make sure a, b, c, d are numeric
+  mutate(
+    across(c(a, b, c, d), as.numeric)
+  )
 ```
 
 ## Convert OD to titre
@@ -143,9 +149,18 @@ df |>
 ## Clean metadata columns
 
 ```{r}
-df <- df |> 
-  mutate(
-    across(c(dob, date_collect), dmy)
+df <- df |>
+  mutate(across(c(dob, date_collect), dmy)) |>
+  select(
+    sample_id,
+    sampling_protocol,
+    date_collect,
+    hospital,
+    gender,
+    age,
+    titre,
+    pos,
+    province
   )
 ```
 

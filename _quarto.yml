@@ -4,9 +4,12 @@ project:
 
 website:
   title: "Thinh's DPhil"
-  navbar:
-    left:
-      - hosp-com.qmd
+  sidebar:
+    style: "docked"
+    contents:
+      - 00_est_imm_profile.qmd
+      - 01_chapter1.qmd
+      - 03_chapter3.qmd
       - sero-vax.qmd
       
 format:
