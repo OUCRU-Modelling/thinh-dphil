@@ -234,8 +234,18 @@ window.Quarto = {
   <li><a href="#static-coverage" id="toc-static-coverage" class="nav-link" data-scroll-target="#static-coverage">Static coverage</a></li>
   <li><a href="#waning-immunity" id="toc-waning-immunity" class="nav-link" data-scroll-target="#waning-immunity">Waning immunity</a></li>
   <li><a href="#age-at-vaccination-dependence" id="toc-age-at-vaccination-dependence" class="nav-link" data-scroll-target="#age-at-vaccination-dependence">Age-at-vaccination dependence</a></li>
+  <li><a href="#individual-level-extension-for-registry-data" id="toc-individual-level-extension-for-registry-data" class="nav-link" data-scroll-target="#individual-level-extension-for-registry-data">Individual-level extension for registry data</a></li>
+  </ul></li>
+  <li><a href="#other-frameworks" id="toc-other-frameworks" class="nav-link" data-scroll-target="#other-frameworks">Other frameworks</a>
+  <ul class="collapse">
+  <li><a href="#static-birth-cohort-model" id="toc-static-birth-cohort-model" class="nav-link" data-scroll-target="#static-birth-cohort-model">Static birth cohort model</a></li>
   </ul></li>
   <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a></li>
+  <li><a href="#immunity-profile-of-hcmc-children" id="toc-immunity-profile-of-hcmc-children" class="nav-link" data-scroll-target="#immunity-profile-of-hcmc-children">Immunity profile of HCMC children</a>
+  <ul class="collapse">
+  <li><a href="#vaccine-efficacy-function" id="toc-vaccine-efficacy-function" class="nav-link" data-scroll-target="#vaccine-efficacy-function">Vaccine efficacy function</a></li>
+  <li><a href="#immunity-profile" id="toc-immunity-profile" class="nav-link" data-scroll-target="#immunity-profile">Immunity profile</a></li>
+  </ul></li>
   <li><a href="#cohort-of-children-from-vaccine-registry" id="toc-cohort-of-children-from-vaccine-registry" class="nav-link" data-scroll-target="#cohort-of-children-from-vaccine-registry">Cohort of children from vaccine registry</a></li>
   <li><a href="#assumption" id="toc-assumption" class="nav-link" data-scroll-target="#assumption">Assumption</a></li>
   </ul>
@@ -361,20 +371,19 @@ Linking to GEOS 3.13.1, GDAL 3.11.0, PROJ 9.6.0; sf_use_s2() is TRUE</code></pre
 </section>
 <section id="models-that-translate-vaccination-to-immunity" class="level2">
 <h2 class="anchored" data-anchor-id="models-that-translate-vaccination-to-immunity">Models that translate vaccination to immunity</h2>
-<p>Vaccine registry provides a snapshot of the vaccination status of all individuals, recording the age at which they received each dose of a measles-containing vaccine (MCV) and their total number of doses. Translating these individual-level records into an age-stratified, population-level immunity profile is called “effective vaccine coverage” (EVC) [<span class="citation" data-cites="kumar2023">Kumar et al. (<a href="#ref-kumar2023" role="doc-biblioref">2023</a>)</span>]<span class="citation" data-cites="shattock2024">(<a href="#ref-shattock2024" role="doc-biblioref">Shattock et al. 2024</a>)</span>.</p>
+<p>The HCMC immunisation registry provides a snapshot of the vaccination status of all registered individuals, recording the date of birth and the date of administration of each dose of a measles-containing vaccine (MCV), from which age at vaccination and total dose count are derived. Translating vaccination records into an age-stratified, population-level immunity profile is termed “effective vaccine coverage” (EVC) <span class="citation" data-cites="kumar2023 shattock2024">(<a href="#ref-kumar2023" role="doc-biblioref">Kumar et al. 2023</a>; <a href="#ref-shattock2024" role="doc-biblioref">Shattock et al. 2024</a>)</span>.</p>
 <blockquote class="blockquote">
 <p>“The proportion of a population/cohort effectively vaccinated against measles, i.e.&nbsp;an indicator of population immunity. It discounts individuals ineffectively vaccinated, i.e.&nbsp;those who are vaccinated but still susceptible to infection.” <span class="citation" data-cites="kumar2023">(<a href="#ref-kumar2023" role="doc-biblioref">Kumar et al. 2023</a>)</span></p>
 </blockquote>
-<p>Depending on the available immunity data, we can model protection using either a binary or a continuous (titre) approach:</p>
+<p>Depending on the available immunity data, protection can be modelled using either a binary or a continuous (titre) approach:</p>
 <ul>
-<li><p>Vaccine efficacy: modelling the proportion of the population that is immune.</p></li>
-<li><p>Antibody titres: modelling individual titre dynamics, then aggregating them to form an age-stratified immunity profile.</p></li>
+<li>Vaccine efficacy: modelling the proportion of the population that is immune.</li>
+<li>Antibody titres: modelling individual titre dynamics, then aggregating them to form an age-stratified immunity profile.</li>
 </ul>
-<p>Waning immunity and age-at-vaccination dependence can be incorporated into both frameworks.</p>
-<p>Since longitudinal titre data for measles vaccine is still limited, for this thesis I will use the binary approach.</p>
+<p>Waning immunity and age-at-vaccination dependence can be incorporated into both frameworks. Since longitudinal titre data for the measles vaccine remain limited, this thesis uses the binary approach.</p>
 <section id="static-coverage" class="level3">
 <h3 class="anchored" data-anchor-id="static-coverage">Static coverage</h3>
-<p>The simplest model assumes vaccine efficacy (VE) remains constant over time. EVC is calculated as the sum of individuals in mutually exclusive dosage strata, weighted by the static efficacy of that stratum <span class="citation" data-cites="kumar2023">(<a href="#ref-kumar2023" role="doc-biblioref">Kumar et al. 2023</a>)</span>.</p>
+<p>The simplest model assumes vaccine efficacy (VE) remains constant over time. EVC is a weighted sum across mutually exclusive dosage strata, with weights given by the efficacy of each stratum <span class="citation" data-cites="kumar2023">(<a href="#ref-kumar2023" role="doc-biblioref">Kumar et al. 2023</a>)</span>.</p>
 <p><span class="math display">\[EVC = c_{\text{1 only}} \times VE_1 + c_{2+} \times VE_2\]</span></p>
 <ul>
 <li><span class="math inline">\(c_{\text{1 only}}\)</span> = proportion with 1 dose only</li>
@@ -384,9 +393,9 @@ Linking to GEOS 3.13.1, GDAL 3.11.0, PROJ 9.6.0; sf_use_s2() is TRUE</code></pre
 </section>
 <section id="waning-immunity" class="level3">
 <h3 class="anchored" data-anchor-id="waning-immunity">Waning immunity</h3>
-<p>If waning immunity is considered and longitudinal efficacy data is available (eg. initial efficacy, efficacy after <span class="math inline">\(t\)</span> years, half-life efficacy…), efficacy at time <span class="math inline">\(t\)</span> can be modelled using an exponential decay function where <span class="math inline">\(\alpha\)</span> represents initial efficacy and <span class="math inline">\(\beta\)</span> represents the decay rate fitted from empirical data <span class="citation" data-cites="shattock2024">(<a href="#ref-shattock2024" role="doc-biblioref">Shattock et al. 2024</a>)</span>.</p>
+<p>If waning immunity is considered and longitudinal efficacy data are available (e.g.&nbsp;initial efficacy, efficacy after <span class="math inline">\(t\)</span> years, efficacy half-life), efficacy at time <span class="math inline">\(t\)</span> can be modelled using an exponential decay function, where <span class="math inline">\(\alpha\)</span> represents initial efficacy and <span class="math inline">\(\beta\)</span> represents the decay rate fitted from empirical data <span class="citation" data-cites="shattock2024">(<a href="#ref-shattock2024" role="doc-biblioref">Shattock et al. 2024</a>)</span>.</p>
 <p><span class="math display">\[VE(t) = \alpha \times e^{-\beta t}\]</span></p>
-<p>EVC for a cohort of age <span class="math inline">\(a\)</span> in year <span class="math inline">\(y\)</span> is estimated by calculating the cumulative probability of remaining unprotected despite multiple annual vaccination opportunities. <span class="math inline">\(VE(y-i)\)</span></p>
+<p>EVC for a cohort of age <span class="math inline">\(a\)</span> in year <span class="math inline">\(y\)</span> is estimated by computing the cumulative probability of remaining unprotected despite multiple annual vaccination opportunities.</p>
 <p><span class="math display">\[EVC(y, a) = 1 - \prod_{i=y-a}^{y} \big( 1 - c(i, \text{age}_{i}) \times VE(y - i) \big)\]</span></p>
 <ul>
 <li><span class="math inline">\(i\)</span> = historical calendar year (iterating from birth year <span class="math inline">\(y-a\)</span> to current year <span class="math inline">\(y\)</span>)</li>
@@ -396,13 +405,35 @@ Linking to GEOS 3.13.1, GDAL 3.11.0, PROJ 9.6.0; sf_use_s2() is TRUE</code></pre
 </section>
 <section id="age-at-vaccination-dependence" class="level3">
 <h3 class="anchored" data-anchor-id="age-at-vaccination-dependence">Age-at-vaccination dependence</h3>
-<p>If vaccine efficacy depends on age at vaccination such as measles vaccine</p>
-<p><span class="math display">\[VE(t, a_{vax}) = \alpha(a_{vax}) \times e^{-\beta(a_{vax}) t}\]</span></p>
+<p>For vaccines where efficacy depends on age at vaccination — including the measles vaccine - both the initial efficacy and the decay rate may vary with <span class="math inline">\(\text{age}_{vax}\)</span>:</p>
+<p><span class="math display">\[VE(t, \text{age}_{vax}) = \alpha(\text{age}_{vax}) \times e^{-\beta(\text{age}_{vax})\, t}\]</span></p>
 <p><span class="math display">\[EVC(y, a) = 1 - \prod_{i=y-a}^{y} \big( 1 - c(i, \text{age}_{i}) \times VE(y - i, \text{age}_{i}) \big)\]</span></p>
+</section>
+<section id="individual-level-extension-for-registry-data" class="level3">
+<h3 class="anchored" data-anchor-id="individual-level-extension-for-registry-data">Individual-level extension for registry data</h3>
+<p>The formulations above were developed for settings where only annual cohort coverage <span class="math inline">\(c(i, \text{age}_i)\)</span> is observed. They rely on two approximations:</p>
+<ul>
+<li>Time discretised at calendar-year resolution</li>
+<li>Coverage represented as a cohort-level proportion. Aggregate coverage tells us how many people got each dose, but not which people got which doses, or at what age. The joint distribution must be inferred from these marginals, which is called “between-dose correlation” (BdC) <span class="citation" data-cites="kumar2023">(<a href="#ref-kumar2023" role="doc-biblioref">Kumar et al. 2023</a>)</span>.</li>
+</ul>
+<p>The HCMC registry contains data at individual resolution, which removes both approximations. For an individual <span class="math inline">\(j\)</span> with date of birth <span class="math inline">\(b_j\)</span> and doses administered at dates <span class="math inline">\(t_{j,1}, \ldots, t_{j,k_j}\)</span>, the per-individual protection probability at evaluation date <span class="math inline">\(T\)</span> is:</p>
+<p><span class="math display">\[P_j(T) = 1 - \prod_{d=1}^{k_j} \big( 1 - VE(\tau_{j,d}, \, a_{j,d}) \big)\]</span></p>
+<p>where <span class="math inline">\(a_{j,d} = t_{j,d} - b_j\)</span> is the age at dose <span class="math inline">\(d\)</span> and <span class="math inline">\(\tau_{j,d} = T - t_{j,d}\)</span> is the time elapsed since dose <span class="math inline">\(d\)</span>. For unvaccinated individuals <span class="math inline">\(VE = 0\)</span>. This is similar to using a leaky model for vaccine effect.</p>
+<p><span class="math display">\[VE(\tau, a) = \max\!\big(0,\; \alpha(a)\, e^{-\beta(a)\,\tau}\big)\]</span></p>
+<p>Cohort-level EVC for a birth-date interval <span class="math inline">\(\mathcal{B}\)</span> is then the average over individuals in that cohort:</p>
+<p><span class="math display">\[EVC(T; \mathcal{B}) = \frac{1}{|\mathcal{B}|} \sum_{j: b_j \in \mathcal{B}} P_j(T)\]</span></p>
+</section>
+</section>
+<section id="other-frameworks" class="level2">
+<h2 class="anchored" data-anchor-id="other-frameworks">Other frameworks</h2>
+<section id="static-birth-cohort-model" class="level3">
+<h3 class="anchored" data-anchor-id="static-birth-cohort-model">Static birth cohort model</h3>
+<p>This one answer another question. Given that we know the current snapshot of population immunity profile (either from seroprevalence or the EVC), we want to make projections of how the future population immunity profile would look like, given some assumption about vaccination uptake in the future. The output is projected immunity levels <span class="citation" data-cites="funk2019 mburu2021">(<a href="#ref-funk2019" role="doc-biblioref">Funk et al. 2019</a>; <a href="#ref-mburu2021" role="doc-biblioref">Mburu et al. 2021</a>)</span>.</p>
 </section>
 </section>
 <section id="parameters" class="level2">
 <h2 class="anchored" data-anchor-id="parameters">Parameters</h2>
+<p>Initial efficacy <span class="math inline">\(\alpha(a)\)</span> for age strata below 9 months is taken from seroconversion estimates <span class="citation" data-cites="lochlainn2019">(<a href="#ref-lochlainn2019" role="doc-biblioref">Lochlainn et al. 2019</a>)</span>, as clinical vaccine effectiveness estimates are unavailable at these ages. For age strata at 9 months and older, <span class="math inline">\(\alpha(a)\)</span> is taken from clinical VE estimates <span class="citation" data-cites="uzicanin2011 who2017 franconeri2023">(<a href="#ref-uzicanin2011" role="doc-biblioref">Uzicanin and Zimmerman 2011</a>; <a href="#ref-who2017" role="doc-biblioref">WHO 2017</a>; <a href="#ref-franconeri2023" role="doc-biblioref">Franconeri et al. 2023</a>)</span> which approximate efficacy shortly after vaccination. For simplicity, we use the same exponential waning rate <span class="math inline">\(\beta\)</span> from <span class="citation" data-cites="franconeri2023">(<a href="#ref-franconeri2023" role="doc-biblioref">Franconeri et al. 2023</a>)</span> for all age strata.</p>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 25%">
@@ -420,37 +451,337 @@ Linking to GEOS 3.13.1, GDAL 3.11.0, PROJ 9.6.0; sf_use_s2() is TRUE</code></pre
 </thead>
 <tbody>
 <tr class="odd">
-<td>VE MCV1 at 9 mo</td>
-<td>85%</td>
-<td></td>
-<td></td>
+<td>Seroconversion MCV1, 4 mo</td>
+<td>50%</td>
+<td>29-71%</td>
+<td><span class="citation" data-cites="lochlainn2019">(<a href="#ref-lochlainn2019" role="doc-biblioref">Lochlainn et al. 2019</a>)</span></td>
 </tr>
 <tr class="even">
-<td>VE MCV1 at &gt;=12 mo</td>
-<td>93-97%</td>
-<td></td>
-<td></td>
+<td>Seroconversion MCV1, 5 mo</td>
+<td>67%</td>
+<td>51-81%</td>
+<td><span class="citation" data-cites="lochlainn2019">(<a href="#ref-lochlainn2019" role="doc-biblioref">Lochlainn et al. 2019</a>)</span></td>
 </tr>
 <tr class="odd">
-<td>VE MCV2</td>
-<td>97-99%</td>
-<td></td>
-<td></td>
+<td>Seroconversion MCV1, 6 mo</td>
+<td>76%</td>
+<td>71-82%</td>
+<td><span class="citation" data-cites="lochlainn2019">(<a href="#ref-lochlainn2019" role="doc-biblioref">Lochlainn et al. 2019</a>)</span></td>
 </tr>
 <tr class="even">
+<td>Seroconversion MCV1, 7 mo</td>
+<td>72%</td>
+<td>56-87%</td>
+<td><span class="citation" data-cites="lochlainn2019">(<a href="#ref-lochlainn2019" role="doc-biblioref">Lochlainn et al. 2019</a>)</span></td>
+</tr>
+<tr class="odd">
+<td>Seroconversion MCV1, 8 mo</td>
+<td>85%</td>
+<td>69-97%</td>
+<td><span class="citation" data-cites="lochlainn2019">(<a href="#ref-lochlainn2019" role="doc-biblioref">Lochlainn et al. 2019</a>)</span></td>
+</tr>
+<tr class="even">
+<td>VE MCV1, 9-11 mo</td>
+<td>84.0%</td>
+<td>72.0-95.0%</td>
+<td><span class="citation" data-cites="uzicanin2011 who2017">(<a href="#ref-uzicanin2011" role="doc-biblioref">Uzicanin and Zimmerman 2011</a>; <a href="#ref-who2017" role="doc-biblioref">WHO 2017</a>)</span></td>
+</tr>
+<tr class="odd">
+<td>VE MCV1, &gt;=12 mo</td>
+<td>92.5%</td>
+<td>84.8-97.0%</td>
+<td><span class="citation" data-cites="uzicanin2011 who2017">(<a href="#ref-uzicanin2011" role="doc-biblioref">Uzicanin and Zimmerman 2011</a>; <a href="#ref-who2017" role="doc-biblioref">WHO 2017</a>)</span></td>
+</tr>
+<tr class="even">
+<td>VE MCV2</td>
+<td>99.6%</td>
+<td>99.3-99.8%</td>
+<td><span class="citation" data-cites="franconeri2023">(<a href="#ref-franconeri2023" role="doc-biblioref">Franconeri et al. 2023</a>)</span></td>
+</tr>
+<tr class="odd">
 <td>Annual waning (proportion seroreverting)</td>
-<td>0.009/yr</td>
-<td>0.005-0.016/yr</td>
-<td></td>
+<td>0.0022/yr</td>
+<td>0.0017-0.0028/yr</td>
+<td><span class="citation" data-cites="franconeri2023">(<a href="#ref-franconeri2023" role="doc-biblioref">Franconeri et al. 2023</a>)</span></td>
 </tr>
 </tbody>
 </table>
+</section>
+<section id="immunity-profile-of-hcmc-children" class="level2">
+<h2 class="anchored" data-anchor-id="immunity-profile-of-hcmc-children">Immunity profile of HCMC children</h2>
+<section id="vaccine-efficacy-function" class="level3">
+<h3 class="anchored" data-anchor-id="vaccine-efficacy-function">Vaccine efficacy function</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>DAYS_PER_MONTH <span class="ot">&lt;-</span> <span class="fl">365.25</span> <span class="sc">/</span> <span class="dv">12</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>DAYS_PER_YEAR  <span class="ot">&lt;-</span> <span class="fl">365.25</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Parameter table</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>ve_params <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">stratum     =</span> <span class="fu">c</span>(<span class="st">"MCV1, 4 mo"</span>, <span class="st">"MCV1, 5 mo"</span>, <span class="st">"MCV1, 6 mo"</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>                  <span class="st">"MCV1, 7 mo"</span>, <span class="st">"MCV1, 8 mo"</span>,</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>                  <span class="st">"MCV1, 9 to 11 mo"</span>, <span class="st">"MCV1, &gt;= 12 mo"</span>,</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>                  <span class="st">"MCV2"</span>),</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">dose        =</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">7</span>), <span class="dv">2</span>),</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">age_lo_days =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>, <span class="dv">12</span>, <span class="dv">12</span>) <span class="sc">*</span> <span class="fl">30.44</span>,</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">age_hi_days =</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>, <span class="dv">12</span>, <span class="cn">Inf</span>, <span class="cn">Inf</span>) <span class="sc">*</span> <span class="fl">30.44</span>,</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">alpha       =</span> <span class="fu">c</span>(<span class="fl">0.50</span>, <span class="fl">0.67</span>, <span class="fl">0.76</span>, <span class="fl">0.72</span>, <span class="fl">0.85</span>, <span class="fl">0.84</span>, <span class="fl">0.925</span>, <span class="fl">0.996</span>),</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">alpha_lo    =</span> <span class="fu">c</span>(<span class="fl">0.29</span>, <span class="fl">0.51</span>, <span class="fl">0.71</span>, <span class="fl">0.56</span>, <span class="fl">0.69</span>, <span class="fl">0.72</span>, <span class="fl">0.848</span>, <span class="fl">0.993</span>),</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">alpha_hi    =</span> <span class="fu">c</span>(<span class="fl">0.71</span>, <span class="fl">0.81</span>, <span class="fl">0.82</span>, <span class="fl">0.87</span>, <span class="fl">0.97</span>, <span class="fl">0.95</span>, <span class="fl">0.970</span>, <span class="fl">0.998</span>)</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Waning rate and CI</span></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>beta_central <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">yr =</span> <span class="fl">0.0022</span>, <span class="at">lo =</span> <span class="fl">0.0017</span>, <span class="at">hi =</span> <span class="fl">0.0028</span>)</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Parameter sampling</span></span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Match Beta distribution to mean and 95% CI by moment-matching</span></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Approximation: treat (hi - lo) / (2 * 1.96) as the SD</span></span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>fit_beta_params <span class="ot">&lt;-</span> <span class="cf">function</span>(mean, lo, hi) {</span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>  sd  <span class="ot">&lt;-</span> (hi <span class="sc">-</span> lo) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> <span class="fl">1.96</span>)</span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>  var <span class="ot">&lt;-</span> sd<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Method-of-moments for Beta(a, b)</span></span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>  a <span class="ot">&lt;-</span> mean <span class="sc">*</span> (mean <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> mean) <span class="sc">/</span> var <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>  b <span class="ot">&lt;-</span> (<span class="dv">1</span> <span class="sc">-</span> mean) <span class="sc">*</span> (mean <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> mean) <span class="sc">/</span> var <span class="sc">-</span> <span class="dv">1</span>)</span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">shape1 =</span> a, <span class="at">shape2 =</span> b)</span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a><span class="co"># Match LogNormal to mean and 95% CI for the waning rate</span></span>
+<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>fit_lnorm_params <span class="ot">&lt;-</span> <span class="cf">function</span>(mean, lo, hi) {</span>
+<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>  <span class="co"># On the log scale, treat reported lo/hi as 2.5% and 97.5% quantiles</span></span>
+<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>  meanlog <span class="ot">&lt;-</span> <span class="fu">log</span>(mean)</span>
+<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>  sdlog   <span class="ot">&lt;-</span> (<span class="fu">log</span>(hi) <span class="sc">-</span> <span class="fu">log</span>(lo)) <span class="sc">/</span> (<span class="dv">2</span> <span class="sc">*</span> <span class="fl">1.96</span>)</span>
+<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">meanlog =</span> meanlog, <span class="at">sdlog =</span> sdlog)</span>
+<span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-41"><a href="#cb11-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-42"><a href="#cb11-42" aria-hidden="true" tabindex="-1"></a><span class="co"># Draw n_draws parameter sets</span></span>
+<span id="cb11-43"><a href="#cb11-43" aria-hidden="true" tabindex="-1"></a>draw_parameters <span class="ot">&lt;-</span> <span class="cf">function</span>(n_draws, <span class="at">params =</span> ve_params,</span>
+<span id="cb11-44"><a href="#cb11-44" aria-hidden="true" tabindex="-1"></a>                            <span class="at">beta_info =</span> beta_central, <span class="at">seed =</span> <span class="dv">42</span>) {</span>
+<span id="cb11-45"><a href="#cb11-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set.seed</span>(seed)</span>
+<span id="cb11-46"><a href="#cb11-46" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb11-47"><a href="#cb11-47" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Draws of alpha for each stratum</span></span>
+<span id="cb11-48"><a href="#cb11-48" aria-hidden="true" tabindex="-1"></a>  alpha_draws <span class="ot">&lt;-</span> params <span class="sc">|&gt;</span></span>
+<span id="cb11-49"><a href="#cb11-49" aria-hidden="true" tabindex="-1"></a>    <span class="fu">rowwise</span>() <span class="sc">|&gt;</span></span>
+<span id="cb11-50"><a href="#cb11-50" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb11-51"><a href="#cb11-51" aria-hidden="true" tabindex="-1"></a>      <span class="at">beta_dist =</span> <span class="fu">list</span>(<span class="fu">fit_beta_params</span>(alpha, alpha_lo, alpha_hi)),</span>
+<span id="cb11-52"><a href="#cb11-52" aria-hidden="true" tabindex="-1"></a>      <span class="at">draws     =</span> <span class="fu">list</span>(<span class="fu">rbeta</span>(n_draws, beta_dist<span class="sc">$</span>shape1, beta_dist<span class="sc">$</span>shape2))</span>
+<span id="cb11-53"><a href="#cb11-53" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb11-54"><a href="#cb11-54" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ungroup</span>() <span class="sc">|&gt;</span></span>
+<span id="cb11-55"><a href="#cb11-55" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(stratum, draws) <span class="sc">|&gt;</span></span>
+<span id="cb11-56"><a href="#cb11-56" aria-hidden="true" tabindex="-1"></a>    <span class="fu">unnest_wider</span>(draws, <span class="at">names_sep =</span> <span class="st">"_"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-57"><a href="#cb11-57" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_longer</span>(<span class="fu">starts_with</span>(<span class="st">"draws_"</span>),</span>
+<span id="cb11-58"><a href="#cb11-58" aria-hidden="true" tabindex="-1"></a>                 <span class="at">names_to =</span> <span class="st">"draw"</span>, <span class="at">values_to =</span> <span class="st">"alpha_draw"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-59"><a href="#cb11-59" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">draw =</span> <span class="fu">as.integer</span>(<span class="fu">str_remove</span>(draw, <span class="st">"draws_"</span>)))</span>
+<span id="cb11-60"><a href="#cb11-60" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb11-61"><a href="#cb11-61" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Draws of beta (per year)</span></span>
+<span id="cb11-62"><a href="#cb11-62" aria-hidden="true" tabindex="-1"></a>  lnp <span class="ot">&lt;-</span> <span class="fu">fit_lnorm_params</span>(beta_info<span class="sc">$</span>yr, beta_info<span class="sc">$</span>lo, beta_info<span class="sc">$</span>hi)</span>
+<span id="cb11-63"><a href="#cb11-63" aria-hidden="true" tabindex="-1"></a>  beta_draws <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb11-64"><a href="#cb11-64" aria-hidden="true" tabindex="-1"></a>    <span class="at">draw    =</span> <span class="dv">1</span><span class="sc">:</span>n_draws,</span>
+<span id="cb11-65"><a href="#cb11-65" aria-hidden="true" tabindex="-1"></a>    <span class="at">beta_yr =</span> <span class="fu">rlnorm</span>(n_draws, lnp<span class="sc">$</span>meanlog, lnp<span class="sc">$</span>sdlog)</span>
+<span id="cb11-66"><a href="#cb11-66" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb11-67"><a href="#cb11-67" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb11-68"><a href="#cb11-68" aria-hidden="true" tabindex="-1"></a>  alpha_draws <span class="sc">|&gt;</span></span>
+<span id="cb11-69"><a href="#cb11-69" aria-hidden="true" tabindex="-1"></a>    <span class="fu">left_join</span>(beta_draws, <span class="at">by =</span> <span class="st">"draw"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-70"><a href="#cb11-70" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">beta_day =</span> beta_yr <span class="sc">/</span> DAYS_PER_YEAR)</span>
+<span id="cb11-71"><a href="#cb11-71" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-72"><a href="#cb11-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-73"><a href="#cb11-73" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- VE function (parameterised) ----------------------------------------</span></span>
+<span id="cb11-74"><a href="#cb11-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-75"><a href="#cb11-75" aria-hidden="true" tabindex="-1"></a><span class="co"># Now takes alpha and beta_day as arguments rather than referencing globals.</span></span>
+<span id="cb11-76"><a href="#cb11-76" aria-hidden="true" tabindex="-1"></a><span class="co"># Looks up alpha from a per-draw parameter table by stratum.</span></span>
+<span id="cb11-77"><a href="#cb11-77" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-78"><a href="#cb11-78" aria-hidden="true" tabindex="-1"></a>ve_function <span class="ot">&lt;-</span> <span class="cf">function</span>(age_days, tau_days, dose, draw_params) {</span>
+<span id="cb11-79"><a href="#cb11-79" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb11-80"><a href="#cb11-80" aria-hidden="true" tabindex="-1"></a>  <span class="co"># draw_params: tibble with one row per stratum giving alpha and beta_day</span></span>
+<span id="cb11-81"><a href="#cb11-81" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb11-82"><a href="#cb11-82" aria-hidden="true" tabindex="-1"></a>  stratum_lookup <span class="ot">&lt;-</span> <span class="fu">tibble</span>(age_days, dose) <span class="sc">|&gt;</span></span>
+<span id="cb11-83"><a href="#cb11-83" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">stratum =</span> <span class="fu">case_when</span>(</span>
+<span id="cb11-84"><a href="#cb11-84" aria-hidden="true" tabindex="-1"></a>      dose <span class="sc">==</span> <span class="dv">2</span>                       <span class="sc">~</span> <span class="st">"MCV2"</span>,</span>
+<span id="cb11-85"><a href="#cb11-85" aria-hidden="true" tabindex="-1"></a>      age_days <span class="sc">&lt;</span> <span class="dv">5</span>  <span class="sc">*</span> DAYS_PER_MONTH  <span class="sc">~</span> <span class="st">"MCV1, 4 mo"</span>,</span>
+<span id="cb11-86"><a href="#cb11-86" aria-hidden="true" tabindex="-1"></a>      age_days <span class="sc">&lt;</span> <span class="dv">6</span>  <span class="sc">*</span> DAYS_PER_MONTH  <span class="sc">~</span> <span class="st">"MCV1, 5 mo"</span>,</span>
+<span id="cb11-87"><a href="#cb11-87" aria-hidden="true" tabindex="-1"></a>      age_days <span class="sc">&lt;</span> <span class="dv">7</span>  <span class="sc">*</span> DAYS_PER_MONTH  <span class="sc">~</span> <span class="st">"MCV1, 6 mo"</span>,</span>
+<span id="cb11-88"><a href="#cb11-88" aria-hidden="true" tabindex="-1"></a>      age_days <span class="sc">&lt;</span> <span class="dv">8</span>  <span class="sc">*</span> DAYS_PER_MONTH  <span class="sc">~</span> <span class="st">"MCV1, 7 mo"</span>,</span>
+<span id="cb11-89"><a href="#cb11-89" aria-hidden="true" tabindex="-1"></a>      age_days <span class="sc">&lt;</span> <span class="dv">9</span>  <span class="sc">*</span> DAYS_PER_MONTH  <span class="sc">~</span> <span class="st">"MCV1, 8 mo"</span>,</span>
+<span id="cb11-90"><a href="#cb11-90" aria-hidden="true" tabindex="-1"></a>      age_days <span class="sc">&lt;</span> <span class="dv">12</span> <span class="sc">*</span> DAYS_PER_MONTH  <span class="sc">~</span> <span class="st">"MCV1, 9 to 11 mo"</span>,</span>
+<span id="cb11-91"><a href="#cb11-91" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span>                            <span class="sc">~</span> <span class="st">"MCV1, &gt;= 12 mo"</span></span>
+<span id="cb11-92"><a href="#cb11-92" aria-hidden="true" tabindex="-1"></a>    ))</span>
+<span id="cb11-93"><a href="#cb11-93" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb11-94"><a href="#cb11-94" aria-hidden="true" tabindex="-1"></a>  joined <span class="ot">&lt;-</span> stratum_lookup <span class="sc">|&gt;</span></span>
+<span id="cb11-95"><a href="#cb11-95" aria-hidden="true" tabindex="-1"></a>    <span class="fu">left_join</span>(draw_params, <span class="at">by =</span> <span class="st">"stratum"</span>)</span>
+<span id="cb11-96"><a href="#cb11-96" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb11-97"><a href="#cb11-97" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pmax</span>(<span class="dv">0</span>, joined<span class="sc">$</span>alpha_draw <span class="sc">*</span> <span class="fu">exp</span>(<span class="sc">-</span>joined<span class="sc">$</span>beta_day <span class="sc">*</span> tau_days))</span>
+<span id="cb11-98"><a href="#cb11-98" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-99"><a href="#cb11-99" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-100"><a href="#cb11-100" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- EVC computation with parameter uncertainty -------------------------</span></span>
+<span id="cb11-101"><a href="#cb11-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-102"><a href="#cb11-102" aria-hidden="true" tabindex="-1"></a>compute_evc_mc <span class="ot">&lt;-</span> <span class="cf">function</span>(roster, doses, eval_date, <span class="at">n_draws =</span> <span class="dv">1000</span>,</span>
+<span id="cb11-103"><a href="#cb11-103" aria-hidden="true" tabindex="-1"></a>                           <span class="at">lag =</span> <span class="dv">14</span>) {</span>
+<span id="cb11-104"><a href="#cb11-104" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb11-105"><a href="#cb11-105" aria-hidden="true" tabindex="-1"></a>  param_draws <span class="ot">&lt;-</span> <span class="fu">draw_parameters</span>(n_draws)</span>
+<span id="cb11-106"><a href="#cb11-106" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb11-107"><a href="#cb11-107" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Pre-compute per-dose age and tau (constant across draws)</span></span>
+<span id="cb11-108"><a href="#cb11-108" aria-hidden="true" tabindex="-1"></a>  dose_data <span class="ot">&lt;-</span> doses <span class="sc">|&gt;</span></span>
+<span id="cb11-109"><a href="#cb11-109" aria-hidden="true" tabindex="-1"></a>    <span class="fu">inner_join</span>(roster <span class="sc">|&gt;</span> <span class="fu">select</span>(id, dob), <span class="at">by =</span> <span class="st">"id"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-110"><a href="#cb11-110" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb11-111"><a href="#cb11-111" aria-hidden="true" tabindex="-1"></a>      <span class="at">age_days =</span> <span class="fu">as.numeric</span>(dose_date <span class="sc">-</span> dob),</span>
+<span id="cb11-112"><a href="#cb11-112" aria-hidden="true" tabindex="-1"></a>      <span class="at">tau_days =</span> <span class="fu">pmax</span>(<span class="dv">0</span>, <span class="fu">as.numeric</span>(eval_date <span class="sc">-</span> dose_date) <span class="sc">-</span> lag)</span>
+<span id="cb11-113"><a href="#cb11-113" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb11-114"><a href="#cb11-114" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb11-115"><a href="#cb11-115" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Loop over draws; could be parallelised with furrr::future_map_dfr</span></span>
+<span id="cb11-116"><a href="#cb11-116" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_dfr</span>(<span class="dv">1</span><span class="sc">:</span>n_draws, <span class="cf">function</span>(d) {</span>
+<span id="cb11-117"><a href="#cb11-117" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-118"><a href="#cb11-118" aria-hidden="true" tabindex="-1"></a>    draw_params_d <span class="ot">&lt;-</span> param_draws <span class="sc">|&gt;</span> <span class="fu">filter</span>(draw <span class="sc">==</span> d)</span>
+<span id="cb11-119"><a href="#cb11-119" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-120"><a href="#cb11-120" aria-hidden="true" tabindex="-1"></a>    per_dose_ve <span class="ot">&lt;-</span> dose_data <span class="sc">|&gt;</span></span>
+<span id="cb11-121"><a href="#cb11-121" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">ve =</span> <span class="fu">ve_function</span>(age_days, tau_days, dose, draw_params_d))</span>
+<span id="cb11-122"><a href="#cb11-122" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-123"><a href="#cb11-123" aria-hidden="true" tabindex="-1"></a>    per_individual <span class="ot">&lt;-</span> per_dose_ve <span class="sc">|&gt;</span></span>
+<span id="cb11-124"><a href="#cb11-124" aria-hidden="true" tabindex="-1"></a>      <span class="fu">group_by</span>(id) <span class="sc">|&gt;</span></span>
+<span id="cb11-125"><a href="#cb11-125" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarise</span>(<span class="at">P =</span> <span class="dv">1</span> <span class="sc">-</span> <span class="fu">prod</span>(<span class="dv">1</span> <span class="sc">-</span> ve), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb11-126"><a href="#cb11-126" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb11-127"><a href="#cb11-127" aria-hidden="true" tabindex="-1"></a>    roster <span class="sc">|&gt;</span></span>
+<span id="cb11-128"><a href="#cb11-128" aria-hidden="true" tabindex="-1"></a>      <span class="fu">left_join</span>(per_individual, <span class="at">by =</span> <span class="st">"id"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-129"><a href="#cb11-129" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">P =</span> <span class="fu">coalesce</span>(P, <span class="dv">0</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb11-130"><a href="#cb11-130" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarise</span>(<span class="at">draw =</span> d, <span class="at">evc =</span> <span class="fu">mean</span>(P))</span>
+<span id="cb11-131"><a href="#cb11-131" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb11-132"><a href="#cb11-132" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-133"><a href="#cb11-133" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-134"><a href="#cb11-134" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Summarise to point estimate and CI ---------------------------------</span></span>
+<span id="cb11-135"><a href="#cb11-135" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-136"><a href="#cb11-136" aria-hidden="true" tabindex="-1"></a>summarise_evc <span class="ot">&lt;-</span> <span class="cf">function</span>(evc_distribution) {</span>
+<span id="cb11-137"><a href="#cb11-137" aria-hidden="true" tabindex="-1"></a>  evc_distribution <span class="sc">|&gt;</span></span>
+<span id="cb11-138"><a href="#cb11-138" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(</span>
+<span id="cb11-139"><a href="#cb11-139" aria-hidden="true" tabindex="-1"></a>      <span class="at">median =</span> <span class="fu">median</span>(evc),</span>
+<span id="cb11-140"><a href="#cb11-140" aria-hidden="true" tabindex="-1"></a>      <span class="at">lower  =</span> <span class="fu">quantile</span>(evc, <span class="fl">0.025</span>),</span>
+<span id="cb11-141"><a href="#cb11-141" aria-hidden="true" tabindex="-1"></a>      <span class="at">upper  =</span> <span class="fu">quantile</span>(evc, <span class="fl">0.975</span>),</span>
+<span id="cb11-142"><a href="#cb11-142" aria-hidden="true" tabindex="-1"></a>      <span class="at">n_draws =</span> <span class="fu">n</span>()</span>
+<span id="cb11-143"><a href="#cb11-143" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb11-144"><a href="#cb11-144" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Build VE curves from Monte Carlo parameter draws -----------------------</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>build_ve_mc_curves <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">n_draws =</span> <span class="dv">1000</span>, <span class="at">tau_max_yr =</span> <span class="dv">15</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>                               <span class="at">tau_n =</span> <span class="dv">200</span>) {</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  param_draws <span class="ot">&lt;-</span> <span class="fu">draw_parameters</span>(n_draws)  <span class="co"># from previous block</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  tau_grid    <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, tau_max_yr, <span class="at">length.out =</span> tau_n)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Cross-join all draws with the tau grid, compute VE</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  param_draws <span class="sc">|&gt;</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">crossing</span>(<span class="at">tau_yr =</span> tau_grid) <span class="sc">|&gt;</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">ve =</span> <span class="fu">pmax</span>(<span class="dv">0</span>, alpha_draw <span class="sc">*</span> <span class="fu">exp</span>(<span class="sc">-</span>beta_yr <span class="sc">*</span> tau_yr))) <span class="sc">|&gt;</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">group_by</span>(stratum, tau_yr) <span class="sc">|&gt;</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">summarise</span>(</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">ve_med =</span> <span class="fu">median</span>(ve),</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">ve_lo  =</span> <span class="fu">quantile</span>(ve, <span class="fl">0.025</span>),</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>      <span class="at">ve_hi  =</span> <span class="fu">quantile</span>(ve, <span class="fl">0.975</span>),</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">left_join</span>(ve_params <span class="sc">|&gt;</span> <span class="fu">select</span>(stratum, dose), <span class="at">by =</span> <span class="st">"stratum"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>      <span class="at">dose_label =</span> <span class="fu">if_else</span>(dose <span class="sc">==</span> <span class="dv">1</span>, <span class="st">"MCV1"</span>, <span class="st">"MCV2"</span>),</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>      <span class="at">stratum    =</span> <span class="fu">factor</span>(stratum, <span class="at">levels =</span> ve_params<span class="sc">$</span>stratum)</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>ve_mc <span class="ot">&lt;-</span> <span class="fu">build_ve_mc_curves</span>(<span class="at">n_draws =</span> <span class="dv">1000</span>, <span class="at">tau_max_yr =</span> <span class="dv">15</span>)</span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Endpoint markers for direct labelling</span></span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>endpoints_mc <span class="ot">&lt;-</span> ve_mc <span class="sc">|&gt;</span></span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(stratum) <span class="sc">|&gt;</span></span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(tau_yr <span class="sc">==</span> <span class="fu">max</span>(tau_yr)) <span class="sc">|&gt;</span></span>
+<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
+<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>palette <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>  <span class="st">"MCV1, 4 mo"</span>        <span class="ot">=</span> <span class="st">"#A50026"</span>,</span>
+<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>  <span class="st">"MCV1, 5 mo"</span>        <span class="ot">=</span> <span class="st">"#D73027"</span>,</span>
+<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>  <span class="st">"MCV1, 6 mo"</span>        <span class="ot">=</span> <span class="st">"#F46D43"</span>,</span>
+<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>  <span class="st">"MCV1, 7 mo"</span>        <span class="ot">=</span> <span class="st">"#FDAE61"</span>,</span>
+<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>  <span class="st">"MCV1, 8 mo"</span>        <span class="ot">=</span> <span class="st">"#74ADD1"</span>,</span>
+<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>  <span class="st">"MCV1, 9 to 11 mo"</span>  <span class="ot">=</span> <span class="st">"#4575B4"</span>,</span>
+<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>  <span class="st">"MCV1, &gt;= 12 mo"</span>    <span class="ot">=</span> <span class="st">"#313695"</span>,</span>
+<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>  <span class="st">"MCV2"</span>              <span class="ot">=</span> <span class="st">"#B8860B"</span></span>
+<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a>p_mc <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(ve_mc,</span>
+<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a>               <span class="fu">aes</span>(<span class="at">x =</span> tau_yr, <span class="at">y =</span> ve_med,</span>
+<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>                   <span class="at">colour =</span> stratum, <span class="at">fill =</span> stratum,</span>
+<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>                   <span class="at">linetype =</span> dose_label)) <span class="sc">+</span></span>
+<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> ve_lo, <span class="at">ymax =</span> ve_hi),</span>
+<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a>              <span class="at">alpha =</span> <span class="fl">0.15</span>, <span class="at">colour =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.85</span>) <span class="sc">+</span></span>
+<span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> endpoints_mc, <span class="at">size =</span> <span class="fl">1.8</span>) <span class="sc">+</span></span>
+<span id="cb12-54"><a href="#cb12-54" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(</span>
+<span id="cb12-55"><a href="#cb12-55" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> endpoints_mc,</span>
+<span id="cb12-56"><a href="#cb12-56" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">label =</span> scales<span class="sc">::</span><span class="fu">percent</span>(ve_med, <span class="at">accuracy =</span> <span class="fl">0.1</span>)),</span>
+<span id="cb12-57"><a href="#cb12-57" aria-hidden="true" tabindex="-1"></a>    <span class="at">hjust =</span> <span class="sc">-</span><span class="fl">0.2</span>, <span class="at">size =</span> <span class="fl">2.9</span>, <span class="at">show.legend =</span> <span class="cn">FALSE</span></span>
+<span id="cb12-58"><a href="#cb12-58" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb12-59"><a href="#cb12-59" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(</span>
+<span id="cb12-60"><a href="#cb12-60" aria-hidden="true" tabindex="-1"></a>    <span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">percent_format</span>(<span class="at">accuracy =</span> <span class="dv">1</span>),</span>
+<span id="cb12-61"><a href="#cb12-61" aria-hidden="true" tabindex="-1"></a>    <span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb12-62"><a href="#cb12-62" aria-hidden="true" tabindex="-1"></a>    <span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.2</span>),</span>
+<span id="cb12-63"><a href="#cb12-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="at">mult =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.02</span>))</span>
+<span id="cb12-64"><a href="#cb12-64" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb12-65"><a href="#cb12-65" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(</span>
+<span id="cb12-66"><a href="#cb12-66" aria-hidden="true" tabindex="-1"></a>    <span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">15</span>, <span class="dv">3</span>),</span>
+<span id="cb12-67"><a href="#cb12-67" aria-hidden="true" tabindex="-1"></a>    <span class="at">limits =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">17</span>),</span>
+<span id="cb12-68"><a href="#cb12-68" aria-hidden="true" tabindex="-1"></a>    <span class="at">expand =</span> <span class="fu">expansion</span>(<span class="at">mult =</span> <span class="fu">c</span>(<span class="fl">0.005</span>, <span class="dv">0</span>))</span>
+<span id="cb12-69"><a href="#cb12-69" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb12-70"><a href="#cb12-70" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> palette, <span class="at">name =</span> <span class="st">"Stratum"</span>) <span class="sc">+</span></span>
+<span id="cb12-71"><a href="#cb12-71" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> palette, <span class="at">name =</span> <span class="st">"Stratum"</span>) <span class="sc">+</span></span>
+<span id="cb12-72"><a href="#cb12-72" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_linetype_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"MCV1"</span> <span class="ot">=</span> <span class="st">"solid"</span>, <span class="st">"MCV2"</span> <span class="ot">=</span> <span class="st">"dashed"</span>),</span>
+<span id="cb12-73"><a href="#cb12-73" aria-hidden="true" tabindex="-1"></a>                        <span class="at">name =</span> <span class="st">"Dose"</span>) <span class="sc">+</span></span>
+<span id="cb12-74"><a href="#cb12-74" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb12-75"><a href="#cb12-75" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Years since vaccination"</span>,</span>
+<span id="cb12-76"><a href="#cb12-76" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Vaccine efficacy"</span></span>
+<span id="cb12-77"><a href="#cb12-77" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb12-78"><a href="#cb12-78" aria-hidden="true" tabindex="-1"></a>  <span class="fu">guides</span>(</span>
+<span id="cb12-79"><a href="#cb12-79" aria-hidden="true" tabindex="-1"></a>    <span class="at">colour   =</span> <span class="fu">guide_legend</span>(<span class="at">order =</span> <span class="dv">1</span>, <span class="at">ncol =</span> <span class="dv">1</span>, <span class="at">reverse =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb12-80"><a href="#cb12-80" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill     =</span> <span class="fu">guide_legend</span>(<span class="at">order =</span> <span class="dv">1</span>, <span class="at">ncol =</span> <span class="dv">1</span>, <span class="at">reverse =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb12-81"><a href="#cb12-81" aria-hidden="true" tabindex="-1"></a>    <span class="at">linetype =</span> <span class="fu">guide_legend</span>(<span class="at">order =</span> <span class="dv">2</span>,</span>
+<span id="cb12-82"><a href="#cb12-82" aria-hidden="true" tabindex="-1"></a>                            <span class="at">override.aes =</span> <span class="fu">list</span>(<span class="at">colour =</span> <span class="st">"grey30"</span>),</span>
+<span id="cb12-83"><a href="#cb12-83" aria-hidden="true" tabindex="-1"></a>                            <span class="at">reverse =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb12-84"><a href="#cb12-84" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb12-85"><a href="#cb12-85" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
+<span id="cb12-86"><a href="#cb12-86" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb12-87"><a href="#cb12-87" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title.position  =</span> <span class="st">"plot"</span>,</span>
+<span id="cb12-88"><a href="#cb12-88" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title           =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="dv">12</span>,</span>
+<span id="cb12-89"><a href="#cb12-89" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">margin =</span> <span class="fu">margin</span>(<span class="at">b =</span> <span class="dv">4</span>)),</span>
+<span id="cb12-90"><a href="#cb12-90" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.subtitle        =</span> <span class="fu">element_text</span>(<span class="at">colour =</span> <span class="st">"grey40"</span>, <span class="at">size =</span> <span class="fl">9.5</span>,</span>
+<span id="cb12-91"><a href="#cb12-91" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">margin =</span> <span class="fu">margin</span>(<span class="at">b =</span> <span class="dv">14</span>)),</span>
+<span id="cb12-92"><a href="#cb12-92" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position      =</span> <span class="st">"right"</span>,</span>
+<span id="cb12-93"><a href="#cb12-93" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.title         =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">10</span>, <span class="at">face =</span> <span class="st">"bold"</span>),</span>
+<span id="cb12-94"><a href="#cb12-94" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.text          =</span> <span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">9</span>),</span>
+<span id="cb12-95"><a href="#cb12-95" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.key.width     =</span> <span class="fu">unit</span>(<span class="fl">1.6</span>, <span class="st">"lines"</span>),</span>
+<span id="cb12-96"><a href="#cb12-96" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.spacing.y     =</span> <span class="fu">unit</span>(<span class="fl">0.3</span>, <span class="st">"lines"</span>),</span>
+<span id="cb12-97"><a href="#cb12-97" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.grid.minor     =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb12-98"><a href="#cb12-98" aria-hidden="true" tabindex="-1"></a>    <span class="at">panel.grid.major     =</span> <span class="fu">element_line</span>(<span class="at">colour =</span> <span class="st">"grey93"</span>),</span>
+<span id="cb12-99"><a href="#cb12-99" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.title           =</span> <span class="fu">element_text</span>(<span class="at">colour =</span> <span class="st">"grey25"</span>),</span>
+<span id="cb12-100"><a href="#cb12-100" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.title.x         =</span> <span class="fu">element_text</span>(<span class="at">margin =</span> <span class="fu">margin</span>(<span class="at">t =</span> <span class="dv">10</span>)),</span>
+<span id="cb12-101"><a href="#cb12-101" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.title.y         =</span> <span class="fu">element_text</span>(<span class="at">margin =</span> <span class="fu">margin</span>(<span class="at">r =</span> <span class="dv">10</span>)),</span>
+<span id="cb12-102"><a href="#cb12-102" aria-hidden="true" tabindex="-1"></a>    <span class="at">axis.text            =</span> <span class="fu">element_text</span>(<span class="at">colour =</span> <span class="st">"grey30"</span>),</span>
+<span id="cb12-103"><a href="#cb12-103" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.margin          =</span> <span class="fu">margin</span>(<span class="dv">15</span>, <span class="dv">20</span>, <span class="dv">12</span>, <span class="dv">15</span>)</span>
+<span id="cb12-104"><a href="#cb12-104" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb12-105"><a href="#cb12-105" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-106"><a href="#cb12-106" aria-hidden="true" tabindex="-1"></a>p_mc</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="00_est_imm_profile_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="624"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="immunity-profile" class="level3">
+<h3 class="anchored" data-anchor-id="immunity-profile">Immunity profile</h3>
+</section>
 </section>
 <section id="cohort-of-children-from-vaccine-registry" class="level2">
 <h2 class="anchored" data-anchor-id="cohort-of-children-from-vaccine-registry">Cohort of children from vaccine registry</h2>
 <p>Confirm with 2019 census data. Age in census data ranged from 1-81.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(df_census<span class="sc">$</span>age)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(df_census<span class="sc">$</span>age)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
       1      21      41      41      61      81 </code></pre>
@@ -458,17 +789,17 @@ Linking to GEOS 3.13.1, GDAL 3.11.0, PROJ 9.6.0; sf_use_s2() is TRUE</code></pre
 </div>
 <p><img src="img/census19.png" class="img-fluid"></p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>df_census <span class="sc">|&gt;</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">band =</span> <span class="fu">case_when</span>(</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>      age <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>   <span class="sc">~</span> <span class="st">"1-5"</span>,</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>      age <span class="sc">%in%</span> <span class="dv">6</span><span class="sc">:</span><span class="dv">10</span>  <span class="sc">~</span> <span class="st">"6-10"</span>,</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>      age <span class="sc">%in%</span> <span class="dv">11</span><span class="sc">:</span><span class="dv">15</span> <span class="sc">~</span> <span class="st">"11-15"</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(band)) <span class="sc">|&gt;</span></span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(band) <span class="sc">|&gt;</span></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(n))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>df_census <span class="sc">|&gt;</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">band =</span> <span class="fu">case_when</span>(</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>      age <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>   <span class="sc">~</span> <span class="st">"1-5"</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>      age <span class="sc">%in%</span> <span class="dv">6</span><span class="sc">:</span><span class="dv">10</span>  <span class="sc">~</span> <span class="st">"6-10"</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>      age <span class="sc">%in%</span> <span class="dv">11</span><span class="sc">:</span><span class="dv">15</span> <span class="sc">~</span> <span class="st">"11-15"</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(band)) <span class="sc">|&gt;</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(band) <span class="sc">|&gt;</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(n))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 3 × 2
   band   total
@@ -480,26 +811,26 @@ Linking to GEOS 3.13.1, GDAL 3.11.0, PROJ 9.6.0; sf_use_s2() is TRUE</code></pre
 </div>
 <p>The 2019 census used pre-merger districts, while registry data have merged districts 2, 9, Thu Duc into Thu Duc:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setdiff</span>(<span class="fu">unique</span>(df_census<span class="sc">$</span>district), <span class="fu">unique</span>(df_vax_hcmc<span class="sc">$</span>district))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setdiff</span>(<span class="fu">unique</span>(df_census<span class="sc">$</span>district), <span class="fu">unique</span>(df_vax_hcmc<span class="sc">$</span>district))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] "9" "2"</code></pre>
 </div>
 </div>
 <p>So let’s merge 2, 9, Thu Duc into Thu Duc</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>census_aligned <span class="ot">&lt;-</span> df_census <span class="sc">|&gt;</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">district =</span> <span class="fu">if_else</span>(district <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"2"</span>, <span class="st">"9"</span>, <span class="st">"thu duc"</span>), <span class="st">"thu duc"</span>, district)) <span class="sc">|&gt;</span></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(age <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>) <span class="sc">|&gt;</span></span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(district, age) <span class="sc">|&gt;</span></span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n_census =</span> <span class="fu">sum</span>(n), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="fu">setdiff</span>(<span class="fu">unique</span>(df_vax_hcmc<span class="sc">$</span>district),</span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">unique</span>(census_aligned<span class="sc">$</span>district))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>census_aligned <span class="ot">&lt;-</span> df_census <span class="sc">|&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">district =</span> <span class="fu">if_else</span>(district <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"2"</span>, <span class="st">"9"</span>, <span class="st">"thu duc"</span>), <span class="st">"thu duc"</span>, district)) <span class="sc">|&gt;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(age <span class="sc">%in%</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(district, age) <span class="sc">|&gt;</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n_census =</span> <span class="fu">sum</span>(n), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="fu">setdiff</span>(<span class="fu">unique</span>(df_vax_hcmc<span class="sc">$</span>district),</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">unique</span>(census_aligned<span class="sc">$</span>district))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>character(0)</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setdiff</span>(<span class="fu">unique</span>(census_aligned<span class="sc">$</span>district),</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>        <span class="fu">unique</span>(df_vax_hcmc<span class="sc">$</span>district))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setdiff</span>(<span class="fu">unique</span>(census_aligned<span class="sc">$</span>district),</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>        <span class="fu">unique</span>(df_vax_hcmc<span class="sc">$</span>district))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>character(0)</code></pre>
 </div>
@@ -519,11 +850,29 @@ Linking to GEOS 3.13.1, GDAL 3.11.0, PROJ 9.6.0; sf_use_s2() is TRUE</code></pre
 </section>
 
 <div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" data-entry-spacing="0" role="list">
+<div id="ref-franconeri2023" class="csl-entry" role="listitem">
+Franconeri, Léa, Denise Antona, Simon Cauchemez, Daniel Lévy-Bruhl, and Juliette Paireau. 2023. <span>“Two-Dose Measles Vaccine Effectiveness Remains High over Time: A French Observational Study, 2017<span></span>2019.”</span> <em>Vaccine</em> 41 (39): 5797–5804. <a href="https://doi.org/10.1016/j.vaccine.2023.08.018">https://doi.org/10.1016/j.vaccine.2023.08.018</a>.
+</div>
+<div id="ref-funk2019" class="csl-entry" role="listitem">
+Funk, Sebastian, Jennifer K. Knapp, Emmaculate Lebo, Susan E. Reef, Alya J. Dabbagh, Katrina Kretsinger, Mark Jit, W. John Edmunds, and Peter M. Strebel. 2019. <span>“Combining Serological and Contact Data to Derive Target Immunity Levels for Achieving and Maintaining Measles Elimination.”</span> <em>BMC Medicine</em> 17 (1): 180. <a href="https://doi.org/10.1186/s12916-019-1413-7">https://doi.org/10.1186/s12916-019-1413-7</a>.
+</div>
 <div id="ref-kumar2023" class="csl-entry" role="listitem">
 Kumar, Shurendar Selva, Anna-Maria Hartner, Arunah Chandran, Katy A. M. Gaythorpe, and Xiang Li. 2023. <span>“Evaluating Effective Measles Vaccine Coverage in the Malaysian Population Accounting for Between-Dose Correlation and Vaccine Efficacy.”</span> <em>BMC Public Health</em> 23 (1): 2351. <a href="https://doi.org/10.1186/s12889-023-17082-9">https://doi.org/10.1186/s12889-023-17082-9</a>.
 </div>
+<div id="ref-lochlainn2019" class="csl-entry" role="listitem">
+Lochlainn, Laura M. Nic, Brechje de Gier, Nicoline van der Maas, Peter M. Strebel, Tracey Goodman, Rob S. van Binnendijk, Hester E. de Melker, and Susan J. M. Hahné. 2019. <span>“Immunogenicity, Effectiveness, and Safety of Measles Vaccination in Infants Younger Than 9 Months: A Systematic Review and Meta-Analysis.”</span> <em>The Lancet Infectious Diseases</em> 19 (11): 1235–45. <a href="https://doi.org/10.1016/S1473-3099(19)30395-0">https://doi.org/10.1016/S1473-3099(19)30395-0</a>.
+</div>
+<div id="ref-mburu2021" class="csl-entry" role="listitem">
+Mburu, C. N., J. Ojal, R. Chebet, D. Akech, B. Karia, J. Tuju, A. Sigilai, et al. 2021. <span>“The Importance of Supplementary Immunisation Activities to Prevent Measles Outbreaks During the COVID-19 Pandemic in Kenya.”</span> <em>BMC Medicine</em> 19 (1): 35. <a href="https://doi.org/10.1186/s12916-021-01906-9">https://doi.org/10.1186/s12916-021-01906-9</a>.
+</div>
 <div id="ref-shattock2024" class="csl-entry" role="listitem">
 Shattock, Andrew J., Helen C. Johnson, So Yoon Sim, Austin Carter, Philipp Lambach, Raymond C. W. Hutubessy, Kimberly M. Thompson, et al. 2024. <span>“Contribution of Vaccination to Improved Survival and Health: Modelling 50 Years of the Expanded Programme on Immunization.”</span> <em>The Lancet</em> 403 (10441): 2307–16. <a href="https://doi.org/10.1016/S0140-6736(24)00850-X">https://doi.org/10.1016/S0140-6736(24)00850-X</a>.
+</div>
+<div id="ref-uzicanin2011" class="csl-entry" role="listitem">
+Uzicanin, Amra, and Laura Zimmerman. 2011. <span>“Field Effectiveness of Live Attenuated Measles-Containing Vaccines: A Review of Published Literature.”</span> <em>The Journal of Infectious Diseases</em> 204 (suppl<span>_</span>1): S133–49. <a href="https://doi.org/10.1093/infdis/jir102">https://doi.org/10.1093/infdis/jir102</a>.
+</div>
+<div id="ref-who2017" class="csl-entry" role="listitem">
+WHO. 2017. <span>“Measles Vaccines: WHO Position Paper <span></span> April 2017.”</span> <a href="https://www.who.int/publications/i/item/who-wer9217-205-227">https://www.who.int/publications/i/item/who-wer9217-205-227</a>.
 </div>
 </div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
