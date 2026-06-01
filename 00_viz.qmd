@@ -118,7 +118,7 @@ ggplot() +
   geom_line(data = df_line, aes(x = week_nv, y = percent_tested * scale_factor), 
             color = "#1D3557", linewidth = 1.2) +
   geom_point(data = df_line, aes(x = week_nv, y = percent_tested * scale_factor), 
-             color = "#1D3557", fill = "white", shape = 21, size = 2.5, stroke = 1.2) +
+             color = "#1D3557", fill = "white", shape = 21, size = 1.5, stroke = 1.2) +
   
   # 3. Scales and Dual Axes
   scale_y_continuous(
@@ -171,5 +171,7 @@ ggplot() +
     # Add a slight margin around the whole plot
     plot.margin = margin(t = 15, r = 15, b = 15, l = 15)
   )
+
+# ggsave("figs/test_rate.png", width = 6, height = 3, dpi = 300, bg = "white")
 ```
 

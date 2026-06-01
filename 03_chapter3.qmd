@@ -488,6 +488,8 @@ ggplot(plot_data, aes(x = b, y = c, fill = outbreak_size)) +
     # Angle x-axis text slightly if you still have overlapping numbers
     axis.text.x = element_text(angle = 90, hjust = 1) 
   )
+
+ggsave("figs/chap3_mod.png", width = 8, height = 6, dpi = 300, bg = "white")
 ```
 
 ### Parameter importance
