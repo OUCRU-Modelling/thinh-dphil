@@ -379,7 +379,7 @@ delta <- 1 / 5.2
 Number of inpatients in the hospital
 
 ```{r}
-N_H0 <- round(alpha_bar * N / (delta + alpha_bar))
+N_H0 <- round(alpha_bar * N / delta)
 N_C0 <- N - N_H0
 cat("Hospital population N_H0:", N_H0)
 cat("Community population N_C0:", N_C0)

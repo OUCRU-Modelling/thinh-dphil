@@ -594,15 +594,15 @@ window.Quarto = {
 </div>
 <p>Number of inpatients in the hospital</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>N_H0 <span class="ot">&lt;-</span> <span class="fu">round</span>(alpha_bar <span class="sc">*</span> N <span class="sc">/</span> (delta <span class="sc">+</span> alpha_bar))</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>N_H0 <span class="ot">&lt;-</span> <span class="fu">round</span>(alpha_bar <span class="sc">*</span> N <span class="sc">/</span> delta)</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>N_C0 <span class="ot">&lt;-</span> N <span class="sc">-</span> N_H0</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Hospital population N_H0:"</span>, N_H0)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Hospital population N_H0: 2560</code></pre>
+<pre><code>Hospital population N_H0: 2564</code></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Community population N_C0:"</span>, N_C0)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Community population N_C0: 1385805</code></pre>
+<pre><code>Community population N_C0: 1385801</code></pre>
 </div>
 </div>
 </section>
@@ -844,12 +844,12 @@ window.Quarto = {
 <span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a> </span>
 <span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a><span class="fu">loglik</span>(p_start)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] -643.8071</code></pre>
+<pre><code>[1] -643.8454</code></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">replicate</span>(<span class="dv">100</span>, <span class="fu">loglik</span>(p_start)))   <span class="co"># seconds per 100 evaluations</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-   0.75    0.00    0.76 </code></pre>
+   1.28    0.02    1.44 </code></pre>
 </div>
 </div>
 </section>
@@ -916,7 +916,7 @@ seed  1.004 25.641 17.555 27.130 40.892
 rho   1.006  0.159  0.103  0.147  0.214
 phi   1.005 25.975 13.530 23.276 38.530
 
-## DIC:  648.996 
+## DIC:  648.995 
 ## Convergence 
  Gelman Rubin multivariate psrf:   
  </code></pre>
@@ -1112,7 +1112,7 @@ phi   1.005 25.975 13.530 23.276 38.530
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>N_C0 <span class="sc">/</span> N_H0</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 541.3301</code></pre>
+<pre><code>[1] 540.484</code></pre>
 </div>
 </div>
 <div class="cell">
