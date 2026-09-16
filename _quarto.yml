@@ -1,16 +1,19 @@
 project:
   type: website
   output-dir: docs
+  render:
+    - 01_res1.qmd
+    - 02_res2.qmd
+    - 03_res3.qmd
 
 website:
   title: "Thinh's DPhil"
   sidebar:
     style: "docked"
     contents:
-      - 00_est_imm_profile.qmd
-      - 01_chapter1.qmd
-      - 03_chapter3.qmd
-      - sero-vax.qmd
+      - 01_res1.qmd
+      - 02_res2.qmd
+      - 03_res3.qmd
       
 format:
   html:

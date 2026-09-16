@@ -1,0 +1,5 @@
+Effect,Source,n,aOR,p
+Underlying medical conditions,National Children's Hospital,995,7.49 (5.10-11.00),8.637540069359329e-25
+Unvaccinated,National Children's Hospital,995,2.33 (1.41-3.87),0.0010315347160748075
+Underlying medical conditions,Provincial hospitals,856,1.43 (0.75-2.72),0.2813136145959135
+Unvaccinated,Provincial hospitals,856,2.40 (1.24-4.66),0.009383774752477647

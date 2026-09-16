@@ -175,3 +175,11 @@ ggplot() +
 # ggsave("figs/test_rate.png", width = 6, height = 3, dpi = 300, bg = "white")
 ```
 
+Remove the negative cases
+
+```{r}
+df_case_suspect <- df_case |> 
+  filter(!(pl_chan_doan %in% c("Loại trừ sởi")))
+table(year(df_case_suspect$ngay_nv))
+```
+

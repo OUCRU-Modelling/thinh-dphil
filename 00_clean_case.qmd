@@ -1,0 +1,125 @@
+---
+title: "Clean case notification"
+format: html
+---
+
+## Constant
+
+Path to data:
+
+```{r}
+path2data <- paste0("C:/Users/ongph/github/data")
+```
+
+Files names:
+
+```{r}
+# Case notification
+cases_file <- "measles/measles_cases_2019-12.2025.xlsx"
+
+# HCMC map
+map_hcmc_file <- "map/gadm41_hcmc_district.rds"
+```
+
+## Packages
+
+Required packages:
+
+```{r}
+required <- c("openxlsx", "janitor", "tidyverse", "stringi")
+
+# Installing those that are not installed yet:
+to_install <- required[! required %in% installed.packages()[, "Package"]]
+if (length(to_install)) install.packages(to_install)
+
+# Loading the packages for interactive use:
+invisible(sapply(required, library, character.only = TRUE))
+```
+
+## Functions
+
+Clean Vietnamese district and province name
+
+```{r}
+clean_district <- function(x) {
+  x |>
+    stri_trans_general("Latin-ASCII") |> 
+    str_to_lower() |>                      
+    str_squish() |>                        
+    str_replace_all("đ", "d") |>
+    str_remove("^(quan |huyen |thanh pho |tp )")
+}
+
+clean_province <- function(x) {
+  x |>
+    stri_trans_general("Latin-ASCII") |> 
+    str_to_lower() |>                      # Fix case mismatches (e.g., Ha Noi vs ha noi)
+    str_squish() |>                        # Remove trailing, leading, or double spaces
+    str_replace_all("đ", "d")              # Catch the Vietnamese 'đ' if the ASCII conversion misses it
+}
+```
+
+## Data
+
+```{r}
+df_map_hcmc <- file.path(path2data, map_hcmc_file) |> 
+  readRDS() |> 
+  mutate(district_blank = clean_district(district))
+```
+
+
+```{r}
+df_case <- file.path(path2data, cases_file) |>
+  read.xlsx(sheet = 4) |>
+  clean_names() |>
+  mutate(
+    # Dates variables
+    ngay_nv = as.Date(as.numeric(ngay_nv), origin = "1899-12-30"),
+    ngay_sinh = as.Date(as.numeric(ngay_sinh), origin = "1899-12-30"),
+    # Compute age
+    age = time_length(interval(ngay_sinh, ngay_nv), "year"),
+    # Clean district names
+    district = clean_district(quan_huyen)
+  )
+```
+
+Remove cases not belong to HCMC: keeps those district within the map of HCMC
+
+```{r}
+d_names <- unique(df_map_hcmc$district_blank)
+
+df_case <- df_case |> 
+  filter(district %in% d_names)
+```
+
+Remove negative cases
+
+```{r}
+table(df_case$pl_chan_doan)
+
+df_case <- df_case |> 
+  mutate(
+    test_status = case_when(
+      pl_chan_doan %in% c("Sởi XĐ PTN", "Xác định phòng xét nghiệm") ~ "Positive",
+      pl_chan_doan == "Loại trừ sởi" ~ "Negative",
+      pl_chan_doan %in% c("Sởi nghi lâm sàng", "Có thể", "Nghi Ngờ", "Nghi ngờ (Lâm sàng)", "Nghi ngờ (lâm sàng)") ~ "Not tested",
+      TRUE ~ "Other/Unknown" # Catches any missing or unlisted classifications
+    )
+  )
+
+table(df_case$test_status)
+```
+
+```{r}
+df_clean <- df_case |> 
+  filter(test_status != "Negative")
+
+saveRDS(df_clean, file.path(path2data, "measles/cleaned/measles_hcmc_18-25.rds"))
+
+df_case_neg <- df_case |> 
+  filter(test_status == "Negative")
+
+saveRDS(df_case_neg, file.path(path2data, "measles/cleaned/measles_hcmc_18-25_neg.rds"))
+```
+
+

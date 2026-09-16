@@ -1,0 +1,8 @@
+Characteristic,Unvaccinated/total (%),OR (95% CI)
+Underlying medical conditions,,
+  No,769/952 (80.8%),1 (ref)
+  Yes,155/170 (91.2%),3.19 (1.81-5.62)
+"Age at onset (total effect, unadjusted)",,
+  9-17 m,578/643 (89.9%),1 (ref)
+  18-59 m,225/299 (75.3%),0.34 (0.24-0.49)
+  60+ m,121/180 (67.2%),0.23 (0.15-0.35)

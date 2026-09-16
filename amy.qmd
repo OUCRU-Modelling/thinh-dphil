@@ -1,0 +1,105 @@
+---
+title: "amy"
+format: html
+---
+
+## Packages
+
+Required packages:
+
+```{r}
+required <- c("openxlsx", "janitor", "tidyverse", "stringi")
+
+# Installing those that are not installed yet:
+to_install <- required[! required %in% installed.packages()[, "Package"]]
+if (length(to_install)) install.packages(to_install)
+
+# Loading the packages for interactive use:
+invisible(sapply(required, library, character.only = TRUE))
+```
+
+## Functions
+
+Clean Vietnamese district and province name
+
+```{r}
+clean_district <- function(x) {
+  x |>
+    stri_trans_general("Latin-ASCII") |> 
+    str_to_lower() |>                      
+    str_squish() |>                        
+    str_replace_all("đ", "d") |>
+    str_remove("^(quan |huyen |thanh pho |tp )")
+}
+
+clean_province <- function(x) {
+  x |>
+    stri_trans_general("Latin-ASCII") |> 
+    str_to_lower() |>                      # Fix case mismatches (e.g., Ha Noi vs ha noi)
+    str_squish() |>                        # Remove trailing, leading, or double spaces
+    str_replace_all("đ", "d")              # Catch the Vietnamese 'đ' if the ASCII conversion misses it
+}
+```
+
+
+## Constant
+
+Path to data:
+
+```{r}
+path2data <- paste0("C:/Users/ongph/github/data")
+```
+
+Files names:
+
+```{r}
+# Case notification
+cases_file <- "measles/measles_cases_2019-12.2025.xlsx"
+```
+
+```{r}
+df_case <- file.path(path2data, cases_file) |>
+  read.xlsx(sheet = 4) |>
+  clean_names() |>
+  mutate(
+    ngay_nv = as.Date(as.numeric(ngay_nv), origin = "1899-12-30"),
+    ngay_sinh = as.Date(as.numeric(ngay_sinh), origin = "1899-12-30"),
+    age = time_length(interval(ngay_sinh, ngay_nv), "year"),
+    district = clean_district(quan_huyen)
+  )
+```
+
+What if you pulled the vaccination coverage from the suspected measles cases, but IgM negative? 
+
+The assumption here is that measles IgM negative are representative of the hospital population broadly. If you don’t think it is a terrible assumption, then we can get vaccination coverage among that population by age (and potentially by age and geography) and apply this coverage to the whole of the hospital population.
+
+Lab test negative: not sure IgM or PCR
+
+```{r}
+df_neg <- df_case |> 
+  filter(ngay_nv >= dmy("01-04-2024") & pl_chan_doan == "Loại trừ sởi") |> 
+  mutate(vax = factor(tiem_chung, levels = c("Không", "Có", "Không rõ"), labels = c("No", "Yes", "Unknown")))
+
+table(df_neg$vax)
+```
+
+```{r}
+df_summary <- df_neg |>
+  mutate(age_group = cut(
+    age,
+    breaks = c(-Inf, 9 / 12, 5, 15, 30, Inf),
+    labels = c("<9m", "9m-5", "5-15", "15-30", "30+")
+  )) |>
+  count(age_group, vax) |>
+  # Calculate percentage within each age group
+  mutate(pct = (n / sum(n)) * 100, .by = age_group) |>
+  # Combine count and percentage into one string
+  mutate(n_pct = sprintf("%d (%.1f%%)", n, pct)) |>
+  select(age_group, vax, n_pct) |>
+  pivot_wider(names_from = vax, values_from = n_pct, values_fill = "0 (0.0%)")
+
+df_summary
+```
+
+
+

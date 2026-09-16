@@ -1,0 +1,915 @@
+---
+title: "Result 2"
+format: html
+editor_options: 
+  chunk_output_type: console
+---
+
+## Constant
+
+Path to data:
+
+```{r}
+path2data <- paste0("C:/Users/ongph/github/data")
+```
+
+Files names:
+
+```{r}
+case_file <- "measles/measles_hn_final.rds"
+
+cs_file <- "census2019_cleaned.rds"
+
+map_file <- "map/map_province.rds"
+
+north_prov <- c("Lao Cai", "Yen Bai", "Dien Bien", "Hoa Binh", "Lai Chau", "Son La", "Ha Giang", "Cao Bang", "Bac Kan", "Lang Son", "Tuyen Quang", "Thai Nguyen", "Phu Tho", "Bac Giang", "Quang Ninh", "Bac Ninh", "Ha Nam", "Ha Noi", "Hai Duong", "Hai Phong", "Hung Yen", "Nam Dinh", "Ninh Binh", "Thai Binh", "Vinh Phuc", "Nghe An", "Thanh Hoa", "Ha Tinh", "Quang Binh")
+
+start_date <- as.Date("2017-07-01")
+end_date   <- as.Date("2019-12-01")
+plot_lims   <- as.Date(c("2017-06-01", "2020-01-01"))
+max_age    <- 15                                   
+mark_prov  <- c("Ha Noi", "Nghe An")
+mark_lab    <- "Initial clusters"
+period     <- "quarter"
+peak_line   <- NULL
+col_zero   <- "grey85"
+col_nodenom <- "white"
+
+age_col <- c("<9 m" = "#0072B2", "9-17 m" = "#E69F00", "18+ m" = "#009E73")
+
+map_nrow    <- 2
+key_h       <- 0.9
+fig_width <- 11
+```
+
+## Packages
+
+Required packages:
+
+```{r, message=FALSE}
+required <- c("tidyverse", "openxlsx", "ggridges", "patchwork", "sf", "dagitty", "splines", "gtsummary")
+
+# Installing those that are not installed yet:
+to_install <- required[! required %in% installed.packages()[, "Package"]]
+if (length(to_install)) install.packages(to_install)
+
+# Loading the packages for interactive use:
+invisible(sapply(required, library, character.only = TRUE))
+```
+
+## Data
+
+```{r}
+df_case <- file.path(path2data, case_file) |> 
+  readRDS() |> 
+  mutate(
+    sex = if_else(gioi %in% c(1), "M", "F"),
+    severity = case_when(
+      severity == "Non-severe" ~ 0,
+      severity == "Level 1" ~ 1,
+      severity == "Level 2" ~ 2,
+    ),
+    severity = as.numeric(severity),
+    vaccination = case_when(
+      vaccination == "Unvaccinated" ~ 0,
+      vaccination == "Vaccinated" ~ 1,
+    ),
+  )
+
+df_map <- file.path(path2data, map_file) |>
+  readRDS() |>
+  filter(province %in% north_prov)
+
+cen <- df_map |> filter(province %in% mark_prov)
+cen <- bind_cols(st_drop_geometry(cen),
+                 as_tibble(suppressWarnings(st_coordinates(st_centroid(st_geometry(cen))))))
+
+df_cs <- file.path(path2data, cs_file) |>
+  readRDS() |>
+  ungroup() |> 
+  filter(age <= max_age, province %in% north_prov) |>
+  summarise(np = sum(np), .by = province)
+```
+
+## Analysis
+
+### Table 1
+
+```{r}
+tbl_summary(df_case, include = c(age_month, sex, vaccination, severity, source_province, chronic_diseases))
+```
+
+
+### Hospital admission progression
+
+```{r}
+per_unit <- c(quarter = "3 months", halfyear = "6 months", year = "1 year")[[period]]
+
+per_label <- function(d) {
+  switch(period,
+         quarter  = paste0("Q", quarter(d), " ", year(d)),
+         halfyear = paste0(year(d), if_else(month(d) <= 6, " H1", " H2")),
+         year     = as.character(year(d)))
+}
+
+sqrt_rescale <- function(x, to = c(0, 1), from = range(x, na.rm = TRUE)) {
+  scales::rescale(sqrt(x), to = to, from = sqrt(from))
+}
+
+# key sizing moved into guide themes in ggplot2 3.5.0
+new_gg <- utils::packageVersion("ggplot2") >= "3.5.0"
+
+cbar_guide <- if (new_gg) {
+  guide_colourbar(order = 1, title.position = "top", title.hjust = 0,
+                  frame.colour = "grey30", frame.linewidth = 0.3,
+                  ticks.colour = "grey30", ticks.linewidth = 0.3,
+                  theme = theme(legend.key.width  = unit(6, "lines"),
+                                legend.key.height = unit(0.5, "lines")))
+} else {
+  guide_colourbar(order = 1, title.position = "top", title.hjust = 0,
+                  frame.colour = "grey30", frame.linewidth = 0.3,
+                  ticks.colour = "grey30", ticks.linewidth = 0.3,
+                  barwidth = unit(5, "lines"), barheight = unit(0.5, "lines"))
+}
+
+shape_guide <- if (new_gg) {
+  guide_legend(order = 2, ncol = 1, title.position = "top", title.hjust = 0,
+               theme = theme(legend.key.height     = unit(key_h, "lines"),
+                             legend.key.spacing.y  = unit(0, "pt")))
+} else {
+  guide_legend(order = 2, ncol = 1, title.position = "top", title.hjust = 0,
+               keyheight = unit(key_h, "lines"))
+}
+
+# ---- case data, shared by all three panels ---------------------------------
+months_all <- seq(start_date, end_date, by = "month")
+pers_all   <- unique(floor_date(months_all, per_unit))
+
+df_base <- df_case |>
+  as_tibble() |>
+  ungroup() |>
+  filter(!is.na(province), !is.na(onset_date)) |>
+  mutate(onset_date  = as.Date(onset_date),
+         onset_month = floor_date(onset_date, "month"),
+         province    = as.character(province),
+         age_m       = as.numeric(age_month),
+         agegr       = cut(age_m, c(-Inf, 9, 18, Inf), right = FALSE,
+                           labels = names(age_col))) |>
+  filter(province %in% north_prov,
+         onset_month >= start_date, onset_month <= end_date)
+
+cat("\n-- cases retained --\n")
+print(tibble(all_cases     = nrow(df_case),
+             in_figure     = nrow(df_base),
+             missing_agegr = sum(is.na(df_base$agegr))))
+
+# ---- panel A: epidemic curve ------------------------------------------------
+df_epi <- df_base |>
+  count(onset_month) |>
+  complete(onset_month = months_all, fill = list(n = 0))
+
+p_epi <- ggplot(df_epi, aes(onset_month, n)) +
+  {if (!is.null(peak_line)) geom_vline(xintercept = peak_line, linetype = "dashed",
+                                       colour = "grey40")} +
+  geom_col(fill = "grey30", width = 25) +
+  scale_x_date(limits = plot_lims, date_breaks = "6 months", date_labels = "%b %Y",
+               expand = c(0, 0)) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
+  labs(x = NULL, y = "Cases") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank(),
+        plot.margin = margin(5, 5, 0, 5))
+
+# ---- panel B: age composition over time ------------------------------------
+df_age <- df_base |>
+  filter(!is.na(agegr)) |>
+  count(onset_month, agegr) |>
+  complete(onset_month = months_all, agegr = names(age_col), fill = list(n = 0)) |>
+  mutate(total = sum(n), prop = if_else(total > 0, 100 * n / total, NA_real_),
+         .by = onset_month) |>
+  mutate(agegr = factor(agegr, levels = names(age_col)))
+
+p_age <- ggplot(df_age, aes(onset_month, prop, fill = agegr)) +
+  geom_col(position = position_stack(reverse = TRUE), width = 25) +
+  {if (!is.null(peak_line)) geom_vline(xintercept = peak_line, linetype = "dashed",
+                                       colour = "grey40")} +
+  scale_x_date(limits = plot_lims, date_breaks = "6 months", date_labels = "%b %Y",
+               expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  scale_fill_manual(values = age_col) +
+  labs(x = NULL, y = "% of cases", fill = "Age at onset") +
+  theme_minimal() +
+  theme(panel.grid = element_blank(),
+        legend.position = "bottom",
+        plot.margin = margin(0, 5, 5, 5))
+
+# ---- map, denominator, and marker centroids --------------------------------
+df_map <- file.path(path2data, map_file) |>
+  readRDS() |>
+  ungroup() |>
+  filter(province %in% north_prov)
+
+cen <- df_map |> filter(province %in% mark_prov)
+cen <- bind_cols(st_drop_geometry(cen),
+                 as_tibble(suppressWarnings(st_coordinates(st_centroid(st_geometry(cen))))))
+
+df_cs <- file.path(path2data, cs_file) |>
+  readRDS() |>
+  ungroup() |>                                        # saved object carried grouping
+  filter(age <= max_age, province %in% north_prov) |>
+  summarise(np = sum(np), .by = province)
+
+cov_tbl <- tibble(onset_month = months_all) |>
+  mutate(onset_per = floor_date(onset_month, per_unit)) |>
+  count(onset_per, name = "months_covered")
+
+cat("\n-- months covered per panel (uneven means a partial period) --\n")
+print(cov_tbl)
+
+df_per <- df_base |>
+  mutate(onset_per = floor_date(onset_month, per_unit)) |>
+  count(province, onset_per) |>
+  complete(province = north_prov, onset_per = pers_all, fill = list(n = 0)) |>
+  left_join(df_cs, by = "province") |>
+  mutate(inc = n / np * 1e5,
+         inc_plot = if_else(n > 0, inc, NA_real_),     # zero drops out, drawn as grey
+         per_lab  = factor(per_label(onset_per), levels = per_label(pers_all)))
+
+cat("\n-- provinces missing from the census --\n"); print(setdiff(north_prov, df_cs$province))
+cat("\n-- provinces missing from the map --\n");    print(setdiff(north_prov, df_map$province))
+
+df_sf <- df_map |> left_join(df_per, by = "province")
+
+# ---- how tall does the map grid need to be? --------------------------------
+bb   <- st_bbox(df_map)
+lat0 <- mean(c(bb["ymin"], bb["ymax"]))
+w_km <- (bb["xmax"] - bb["xmin"]) * 111 * cos(lat0 * pi / 180)
+h_km <- (bb["ymax"] - bb["ymin"]) * 111
+map_ncol <- ceiling(length(pers_all) / map_nrow)
+
+pan_w   <- (fig_width - 1) / map_ncol                 # usable width per facet, inches
+map_h   <- pan_w * (h_km / w_km) * map_nrow + 0.35 * map_nrow + 1.0   # strips + legend
+h_ratio <- c(1, 1, map_h / 1.7)                       # A and B get ~1.7 in each
+
+cat("\n-- map sizing --\n")
+print(tibble(map_ncol, map_nrow,
+             aspect_w_over_h = round(w_km / h_km, 2),
+             panel_c_height_in = round(map_h, 1),
+             suggested_fig_height_in = round(map_h + 3.4, 1)))
+
+# ---- panel C: incidence map -------------------------------------------------
+inc_breaks  <- waiver()
+
+p_map <- ggplot(df_sf) +
+  geom_sf(aes(fill = inc_plot), colour = "white", linewidth = 0.1) +
+  geom_sf(data = df_sf |> filter(is.na(np)), fill = col_nodenom,
+          colour = "white", linewidth = 0.1) +
+  geom_point(data = cen, aes(x = X, y = Y, shape = province),
+             fill = "white", colour = "black", stroke = 0.5) +
+  scale_fill_viridis_c(rescaler = sqrt_rescale, na.value = col_zero,
+                       breaks = inc_breaks) +
+  scale_shape_manual(values = setNames(c(21, 24), mark_prov)) +
+  coord_sf(expand = FALSE) +
+  facet_wrap(~ per_lab, nrow = map_nrow) +
+  guides(fill = cbar_guide, shape = shape_guide) +
+  labs(x = NULL, y = NULL, shape = mark_lab,
+       fill = "Admissions per 100,000 children") +
+  theme_minimal() +
+  theme(axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.grid = element_blank(),
+        panel.spacing = unit(0.2, "lines"),
+        strip.text = element_text(margin = margin(2, 0, 2, 0)),
+        legend.position = "bottom",
+        legend.box = "horizontal",
+        legend.box.just = "top",
+        legend.box.spacing = unit(0.5, "lines"),
+        plot.margin = margin(5, 5, 5, 5))
+
+# ---- assemble ---------------------------------------------------------------
+p_all <- p_epi / p_age / p_map +
+  plot_layout(heights = h_ratio) +
+  plot_annotation(tag_levels = "A") &
+  theme(plot.tag = element_text(face = "bold"))
+
+p_all
+
+# ggsave("figs/chap2/outbreak_overview.png", p_all,
+#        width = 6, height = 6.5, dpi = 300, bg = "white")
+```
+
+
+### Density of nosocomial infection
+
+```{r}
+library(tidyverse)
+library(ggridges)
+
+# ---- settings ---------------------------------------------------------------
+n_provs     <- 10
+bw_days     <- 40                                     # kernel sd, in days
+min_n       <- 3                                      # min cases per province x source
+weight_by_n <- FALSE                                  # kept FALSE: shape only
+ridge_scale <- 0.9
+grid_n      <- 512
+x_lims      <- as.Date(c("2017-04-01", "2020-01-01"))
+hl_end      <- as.Date("2019-01-01")                  # highlight only before this date
+hl_alpha    <- 0.35
+sort_by     <- "mean"                                 # "mean", "other h", or "nch"
+n_boot      <- 1000
+set.seed(1)
+
+src_col  <- c(community = "#6B7280", `other h` = "#2563EB", nch = "#16A34A")
+src_lab  <- c(community = "Community",
+              `other h` = "Provincial hospital",
+              nch       = "National Children's Hospital")
+src_ord  <- c("community", "other h", "nch")
+
+# ---- data -------------------------------------------------------------------
+df_top <- df_case |>
+  as_tibble() |>
+  filter(!is.na(source_province), !is.na(onset_date), !is.na(province)) |>
+  mutate(onset_date = as.Date(onset_date), province = as.character(province)) |>
+  filter(onset_date >= x_lims[1], onset_date <= x_lims[2])
+
+provs <- df_top |> count(province, sort = TRUE) |> slice_head(n = n_provs) |> pull(province)
+
+df_top <- df_top |>
+  filter(province %in% provs) |>
+  filter(n() >= min_n, .by = c(province, source_province)) |>
+  filter(any(source_province == "community"), .by = province)
+
+# ---- one grid, one bandwidth, one kernel matrix per province x source --------
+kde_grid <- seq(as.numeric(x_lims[1]), as.numeric(x_lims[2]), length.out = grid_n)
+
+dens_tbl <- df_top |>
+  summarise(n = n(), x = list(as.numeric(onset_date)), .by = c(province, source_province)) |>
+  mutate(K      = map(x, \(v) dnorm(outer(v, kde_grid, "-"), sd = bw_days)),  # n x grid
+         dens_v = map(K, colMeans),
+         dens_v = if (weight_by_n) map2(dens_v, n, \(v, k) v * k) else dens_v)
+
+gmax <- max(unlist(dens_tbl$dens_v))                  # single global constant
+
+# ---- peaks and bootstrap ----------------------------------------------------
+boot_modes <- function(K, nrep) {
+  n <- nrow(K)
+  W <- t(rmultinom(nrep, n, rep.int(1 / n, n)))       # nrep x n resample counts
+  kde_grid[max.col(W %*% K, ties.method = "first")]
+}
+
+pk <- dens_tbl |>
+  mutate(i      = map_int(dens_v, which.max),
+         peak_x = kde_grid[i],
+         peak_h = map2_dbl(dens_v, i, \(v, j) v[j]) / gmax * ridge_scale,
+         boot   = map(K, boot_modes, nrep = n_boot))
+
+# how stable is each peak? ratio2 near 1 means two rival modes of similar height
+diag_tbl <- dens_tbl |>
+  mutate(lm_idx  = map(dens_v, \(v) which(diff(sign(diff(v))) == -2) + 1),
+         n_modes = map_int(lm_idx, length),
+         ratio2  = map2_dbl(dens_v, lm_idx,
+                            \(v, j) if (length(j) < 2) 0 else
+                              {h <- sort(v[j], decreasing = TRUE); h[2] / h[1]})) |>
+  select(province, source_province, n, n_modes, ratio2) |>
+  arrange(desc(ratio2))
+print(as_tibble(diag_tbl), n = Inf)
+
+# ---- share of cases before hl_end: the number behind the shading -------------
+early_cmp <- df_top |>
+  summarise(n = n(), pct_early = 100 * mean(onset_date < hl_end),
+            .by = c(province, source_province))
+early_cmp <- early_cmp |>
+  filter(source_province != "community") |>
+  left_join(early_cmp |> filter(source_province == "community") |>
+              select(province, n_comm = n, pct_comm = pct_early), by = "province") |>
+  mutate(diff = pct_early - pct_comm) |>
+  arrange(desc(diff))
+print(as_tibble(early_cmp), n = Inf)
+
+# ---- lead time: hospital peak minus community peak (negative = hospital first)
+comm <- pk |> filter(source_province == "community") |>
+  select(province, peak_comm = peak_x, boot_comm = boot)
+
+lead <- pk |>
+  filter(source_province != "community") |>
+  select(province, source_province, n, peak_x, boot) |>
+  left_join(comm, by = "province") |>
+  mutate(lead = peak_x - peak_comm,
+         lo   = map2_dbl(boot, boot_comm, \(a, b) unname(quantile(a - b, 0.025))),
+         hi   = map2_dbl(boot, boot_comm, \(a, b) unname(quantile(a - b, 0.975))))
+
+print(lead |> select(province, source_province, n, lead, lo, hi) |> arrange(lead), n = Inf)
+
+ord_key <- lead |>
+  summarise(key = if (sort_by == "mean") mean(lead)
+            else {v <- lead[source_province == sort_by]; if (length(v)) v[1] else NA_real_},
+            .by = province)
+
+lev <- tibble(province = unique(dens_tbl$province)) |>
+  left_join(ord_key, by = "province") |>
+  mutate(key = coalesce(key, Inf)) |>                 # no hospital source: sits at the bottom
+  arrange(desc(key)) |>
+  pull(province)                                      # most negative ends up on top
+
+yof <- function(p) match(p, lev)
+
+# ---- long density table, community duplicated into both panels --------------
+pan_lab <- c(`other h` = "Community vs \nprovincial hospital",
+             nch       = "Community vs \nNational Children's Hospital")
+pan_lev <- unname(pan_lab)
+
+dens_long <- dens_tbl |>
+  select(province, source_province, dens_v) |>
+  mutate(d = map(dens_v, \(v) tibble(gi = seq_along(v), xn = kde_grid,
+                                     height = v / gmax * ridge_scale))) |>
+  select(-dens_v) |>
+  unnest(d) |>
+  mutate(onset_date = as.Date(xn, origin = "1970-01-01"))
+
+expand_panels <- function(dat) {
+  bind_rows(
+    dat |> filter(source_province %in% c("community", "other h")) |> mutate(panel = pan_lab[["other h"]]),
+    dat |> filter(source_province %in% c("community", "nch"))     |> mutate(panel = pan_lab[["nch"]])
+  ) |>
+    mutate(panel = factor(panel, levels = pan_lev),
+           y     = yof(province),
+           source_province = factor(source_province, levels = src_ord))
+}
+
+df_dens <- expand_panels(dens_long)
+df_comm <- df_dens |> filter(source_province == "community")
+df_hosp <- df_dens |> filter(source_province != "community")
+
+pk_pan <- pk |> select(province, source_province, peak_x, peak_h) |>
+  expand_panels() |>
+  mutate(peak_date = as.Date(peak_x, origin = "1970-01-01"))
+
+# ---- highlight band: hospital above community, before hl_end ----------------
+hl_band <- dens_long |>
+  filter(source_province != "community", xn <= as.numeric(hl_end)) |>
+  rename(h_h = height) |>
+  left_join(dens_long |> filter(source_province == "community") |>
+              select(province, gi, h_c = height), by = c("province", "gi")) |>
+  mutate(panel = factor(pan_lab[as.character(source_province)], levels = pan_lev),
+         source_province = factor(source_province, levels = src_ord),
+         y    = yof(province),
+         ymin = y + h_c,
+         ymax = y + pmax(h_h, h_c))
+
+# ---- plot -------------------------------------------------------------------
+p_ridge <- ggplot(mapping = aes(x = onset_date, y = y, height = height,
+                                colour = source_province,
+                                group = interaction(province, source_province))) +
+  geom_ridgeline(data = df_comm, fill = NA, scale = 1, key_glyph = "path") +
+  geom_ribbon(data = hl_band,
+              aes(x = onset_date, ymin = ymin, ymax = ymax, fill = source_province,
+                  group = interaction(province, source_province)),
+              inherit.aes = FALSE, alpha = hl_alpha, colour = NA, show.legend = FALSE) +
+  geom_ridgeline(data = df_hosp, fill = NA, scale = 1, key_glyph = "path") +
+  geom_point(data = pk_pan, aes(x = peak_date, y = y + peak_h, colour = source_province),
+             inherit.aes = FALSE, show.legend = FALSE) +
+  facet_wrap(~ panel) +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y", expand = expansion(mult = 0.01)) +
+  scale_y_continuous(breaks = seq_along(lev), labels = lev,
+                     expand = expansion(add = c(0.15, ridge_scale + 0.15))) +
+  scale_colour_manual(values = src_col, breaks = src_ord,
+                      labels = unname(src_lab[src_ord])) +
+  scale_fill_manual(values = src_col, guide = "none") +
+  coord_cartesian(xlim = x_lims, clip = "off") +
+  labs(x = NULL, y = NULL, colour = "Source of infection") +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.spacing.x = unit(1, "lines"),
+        strip.text = element_text(hjust = 0))
+
+p_ridge
+
+# ggsave("figs/chap2/ridge_source_onset.png", p_ridge, width = 6.5, height = 4, dpi = 300, bg = "white")
+```
+
+### Nosocomial infection
+
+```{r}
+# ---- settings ---------------------------------------------------------------
+mcv1_age   <- 9        # months, MCV1 in the Vietnam schedule
+cal_sev    <- FALSE    # TRUE only if you add cal -> sev to the DAG
+cal_in_med <- FALSE    # FALSE matches dagitty {age}; TRUE adds calendar time
+out_dir    <- "figs/chap2"
+umc_lab    <- "Underlying medical conditions"
+dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+
+# ---- helpers ----------------------------------------------------------------
+yn <- function(x) {
+  if (is.logical(x)) return(x)
+  if (is.numeric(x)) return(x == 1)
+  s <- tolower(trimws(as.character(x)))
+  out <- rep(NA, length(s))
+  out[s %in% c("yes", "y", "1", "true", "t")]  <- TRUE
+  out[s %in% c("no",  "n", "0", "false", "f")] <- FALSE
+  out
+}
+
+tidy_or <- function(m, keep = NULL) {
+  ct  <- summary(m)$coefficients
+  est <- ct[, 1]; se <- ct[, 2]
+  sel <- !grepl("ns\\(|Intercept", rownames(ct))
+  out <- tibble(term = rownames(ct)[sel],
+                or = exp(est[sel]),
+                lo = exp(est[sel] - 1.96 * se[sel]),
+                hi = exp(est[sel] + 1.96 * se[sel]),
+                p  = 2 * pnorm(-abs(est[sel] / se[sel])),
+                n  = stats::nobs(m)) |>
+    mutate(txt = sprintf("%.2f (%.2f-%.2f)", or, lo, hi))
+  if (is.null(keep)) out else filter(out, term %in% keep)
+}
+
+lrt_p <- function(full, red) anova(red, full, test = "LRT")[2, "Pr(>Chi)"]
+
+desc_out <- function(dat, v, outcome) {
+  lv <- levels(dat[[v]])
+  d <- dat |>
+    filter(!is.na(.data[[v]])) |>
+    summarise(n_tot = n(), n_pos = sum(.data[[outcome]]), .by = all_of(v)) |>
+    rename(level = 1) |>
+    mutate(level = as.character(level))
+  if (!is.null(lv)) d <- d |> arrange(match(level, lv))
+  d |> mutate(term = paste0(v, level),
+              cell = sprintf("%d/%d (%.1f%%)", n_pos, n_tot, 100 * n_pos / n_tot))
+}
+
+# one header row, then one indented row per level, ORs taken from `adj`
+blk <- function(dat, v, header, outcome, adj) {
+  desc_out(dat, v, outcome) |>
+    left_join(adj |> select(term, a = txt), by = "term") |>
+    mutate(a = replace_na(a, "1 (ref)")) |>
+    transmute(Characteristic = paste0("  ", level), n_out = cell, Adjusted = a) |>
+    (\(d) bind_rows(tibble(Characteristic = header, n_out = "", Adjusted = ""), d))()
+}
+
+or_to_rr <- function(or, p0) or / (1 - p0 + p0 * or)
+evalue   <- function(rr) { rr <- ifelse(rr < 1, 1 / rr, rr); rr + sqrt(rr * (rr - 1)) }
+
+# ---- the DAG ----------------------------------------------------------------
+g <- dagitty('dag {
+  cal  [pos="0,3"]  age [pos="0,2"]  med [pos="0,1"]
+  vacc [pos="2,2.5"] sev [pos="2,1.5"]
+  hexp [latent, pos="2,0.5"]
+  noso [pos="4,1.5"]
+  cal -> vacc   cal -> hexp   cal -> noso
+  age -> med    age -> vacc   age -> sev   age -> hexp
+  med -> vacc   med -> sev    med -> hexp
+  vacc -> sev   vacc -> noso
+  hexp -> noso
+}')
+if (cal_sev) g <- dagitty(paste0(sub("\\}$", "", as.character(g)), " cal -> sev }"))
+
+cat("\n===== ADJUSTMENT SETS: one entry per model fitted below =====\n")
+for (e in list(c("med", "noso"), c("vacc", "noso"), c("med", "vacc"),
+               c("vacc", "sev"), c("med", "sev"),
+               c("age", "noso"), c("age", "vacc"), c("age", "sev"))) {
+  cat("\n", e[1], "->", e[2], "\n  total:  ", sep = "")
+  print(adjustmentSets(g, e[1], e[2], effect = "total"))
+}
+cat("\n-- testable implications --\n"); print(impliedConditionalIndependencies(g))
+
+# ---- data -------------------------------------------------------------------
+df_an <- df_case |>
+  as_tibble() |>
+  ungroup() |>
+  filter(!is.na(source_province)) |>
+  mutate(
+    onset_date = as.Date(onset_date),
+    t_num  = as.numeric(onset_date),
+    age_m  = as.numeric(age_month),
+    umc    = yn(chronic_diseases),
+    vacc   = yn(vaccination),
+    sev_n  = as.integer(as.character(severity)),
+    noso   = as.integer(source_province != "community"),
+    src3   = factor(source_province, levels = c("community", "other h", "nch")),
+    elig   = age_m >= mcv1_age,
+    umc_f  = factor(if_else(umc, "Yes", "No"), levels = c("No", "Yes")),
+    vacc3  = factor(case_when(is.na(elig) ~ NA_character_,
+                              !elig ~ "Age-ineligible",
+                              vacc  ~ "Vaccinated",
+                              !vacc ~ "Eligible, unvaccinated"),
+                    levels = c("Vaccinated", "Eligible, unvaccinated", "Age-ineligible")),
+    age_band = cut(age_m, c(-Inf, mcv1_age, 18, 60, Inf), right = FALSE,
+                   labels = c("<9 m", "9-17 m", "18-59 m", "60+ m")),
+    sev1 = as.integer(sev_n >= 1),
+    sev2 = as.integer(sev_n >= 2)
+  )
+
+cat("\n-- recoding check: extra NAs mean a coding mismatch --\n")
+print(tibble(var = c("chronic_diseases", "vaccination", "severity"),
+             na_raw     = c(sum(is.na(df_case$chronic_diseases)),
+                            sum(is.na(df_case$vaccination)),
+                            sum(is.na(df_case$severity))),
+             na_recoded = c(sum(is.na(df_an$umc)), sum(is.na(df_an$vacc)),
+                            sum(is.na(df_an$sev_n)))))
+
+df_el <- df_an |>
+  filter(elig, !is.na(vacc)) |>
+  mutate(age_band = fct_relevel(fct_drop(age_band), "9-17 m"),
+         unvacc   = as.integer(!vacc),
+         vacc_f   = factor(if_else(vacc, "Vaccinated", "Unvaccinated"),
+                           levels = c("Vaccinated", "Unvaccinated")))
+
+df_sev <- df_el |> filter(!is.na(sev_n), !is.na(umc))
+
+cat("\n-- analysis sets --\n")
+print(tibble(set = c("all cases with a recorded source",
+                     "age-eligible, vaccination known",
+                     "age-eligible, severity known"),
+             n = c(nrow(df_an), nrow(df_el), nrow(df_sev))))
+
+cat("\n-- sparse-cell check --\n")
+print(table(df_an$umc_f,  df_an$noso,   dnn = c(umc_lab, "nosocomial"), useNA = "ifany"))
+print(table(df_el$vacc_f, df_el$noso,   dnn = c("vaccination", "nosocomial"), useNA = "ifany"))
+print(table(df_sev$umc_f, df_sev$sev_n, dnn = c(umc_lab, "severity"), useNA = "ifany"))
+
+# ---- models: one per target effect, each matching its dagitty set ----------
+cal_rhs <- " + ns(t_num, 3)"
+med_rhs <- if (cal_in_med) cal_rhs else ""
+sev_rhs <- if (cal_sev)    cal_rhs else ""
+
+# med -> noso, total. dagitty {age}
+mA   <- glm(as.formula(paste0("noso ~ umc_f + age_band", med_rhs)), df_an, family = binomial)
+mB0  <- glm(as.formula(paste0("noso ~ umc_f + age_band", med_rhs)), df_el, family = binomial)
+# vacc -> noso. dagitty {age, cal, med}. cal is required: conditioning on vacc
+# opens med -> vacc <- cal -> noso, and cal closes it again.
+mB1  <- glm(as.formula(paste0("noso ~ vacc_f + age_band + umc_f", cal_rhs)),
+            df_el, family = binomial)
+# med -> vacc, total. dagitty {age}
+mC   <- glm(unvacc ~ umc_f + age_band, df_el, family = binomial)
+# vacc -> sev. dagitty {age, med}
+mS1  <- glm(as.formula(paste0("sev1 ~ vacc_f + age_band + umc_f", sev_rhs)),
+            df_sev, family = binomial)
+mS2  <- glm(as.formula(paste0("sev2 ~ vacc_f + age_band + umc_f", sev_rhs)),
+            df_sev, family = binomial)
+# med -> sev, total. dagitty {age}; vaccination is a mediator, left out
+mS1t <- glm(as.formula(paste0("sev1 ~ umc_f + age_band", sev_rhs)), df_sev, family = binomial)
+mS2t <- glm(as.formula(paste0("sev2 ~ umc_f + age_band", sev_rhs)), df_sev, family = binomial)
+# age is exogenous on the DAG, so the crude estimate is the total effect
+mAgeN_all <- glm(noso ~ age_band, df_an,  family = binomial)
+mAgeN_el  <- glm(noso ~ age_band, df_el,  family = binomial)
+mAgeV     <- glm(unvacc ~ age_band, df_el, family = binomial)
+mAgeS1    <- glm(sev1 ~ age_band, df_sev, family = binomial)
+mAgeS2    <- glm(sev2 ~ age_band, df_sev, family = binomial)
+
+cat("\n-- model register: dagitty set vs what was fitted --\n")
+print(tribble(
+  ~model, ~target,        ~dagitty_set,      ~fitted,
+  "mA/mB0", "med -> noso",  "{age}",           paste0("age", if (cal_in_med) " + cal" else ""),
+  "mB1",    "vacc -> noso", "{age, cal, med}", "age + cal + med",
+  "mC",     "med -> vacc",  "{age}",           "age",
+  "mS1/2",  "vacc -> sev",  "{age, med}",      paste0("age + med", if (cal_sev) " + cal" else ""),
+  "mS1t/2t","med -> sev",   "{age}",           paste0("age", if (cal_sev) " + cal" else ""),
+  "mAge*",  "age -> *",     "{ } exogenous",   "unadjusted"
+))
+
+# ---- testable implications, tested ----------------------------------------
+cat("\n===== TESTING THE FOUR IMPLIED CONDITIONAL INDEPENDENCIES =====\n")
+m_ac <- lm(age_m ~ ns(t_num, 3), df_an)
+cat("\nage _||_ cal            p =", signif(anova(m_ac)[1, "Pr(>F)"], 3),
+    " R2 =", round(summary(m_ac)$r.squared, 4), "\n")
+
+cat("cal _||_ med            p =",
+    signif(lrt_p(glm(umc ~ ns(t_num, 3), df_an, family = binomial),
+                 glm(umc ~ 1, df_an, family = binomial)), 3), "\n")
+
+for (k in 1:2) {
+  f <- glm(as.formula(paste0("sev", k, " ~ age_band + umc_f + vacc_f + ns(t_num, 3)")),
+           df_sev, family = binomial)
+  r <- glm(as.formula(paste0("sev", k, " ~ age_band + umc_f + vacc_f")),
+           df_sev, family = binomial)
+  cat("cal _||_ sev>=", k, " | age,med,vacc   p =", signif(lrt_p(f, r), 3), "\n", sep = "")
+}
+
+for (k in 1:2) {
+  f <- glm(as.formula(paste0("sev", k, " ~ age_band + umc_f + vacc_f + noso")),
+           df_sev, family = binomial)
+  r <- glm(as.formula(paste0("sev", k, " ~ age_band + umc_f + vacc_f")),
+           df_sev, family = binomial)
+  ct <- summary(f)$coefficients["noso", ]
+  cat("noso _||_ sev>=", k, " | age,med,vacc  OR = ", sprintf("%.2f (%.2f-%.2f)",
+      exp(ct[1]), exp(ct[1] - 1.96 * ct[2]), exp(ct[1] + 1.96 * ct[2])),
+      "  p = ", signif(lrt_p(f, r), 3), "\n", sep = "")
+}
+cat("\nIf the last test rejects, add hexp -> sev to the DAG and re-derive the sets.\n")
+
+# =============================================================================
+# SECTION 1. WHO ACQUIRED MEASLES IN HOSPITAL
+# =============================================================================
+cat("\n\n===== SECTION 1: WHO ACQUIRED MEASLES IN HOSPITAL =====\n")
+
+cat("\n-- 1.0 how much transmission was nosocomial --\n")
+print(df_an |> count(src3) |> mutate(pct = round(100 * n / sum(n), 1)))
+
+cat("\n-- 1.0b age (months) by source --\n")
+print(df_an |>
+        mutate(grp = if_else(noso == 1, "Nosocomial", "Community")) |>
+        summarise(n = n(), med = median(age_m, na.rm = TRUE),
+                  q1 = quantile(age_m, .25, na.rm = TRUE),
+                  q3 = quantile(age_m, .75, na.rm = TRUE), .by = grp))
+
+cat("\n-- 1.1 sensitivity: extra calendar adjustment on med -> noso --\n")
+print(bind_rows(
+  glm(noso ~ umc_f + age_band, df_el, family = binomial) |>
+    tidy_or("umc_fYes") |> mutate(model = "age only (dagitty set)"),
+  glm(noso ~ umc_f + age_band + ns(t_num, 3), df_el, family = binomial) |>
+    tidy_or("umc_fYes") |> mutate(model = "age + calendar spline")) |>
+    select(model, aOR = txt, p))
+
+tab_noso <- bind_rows(
+  tibble(Characteristic = sprintf("PANEL A. All cases (n = %d)", nrow(df_an)),
+         n_out = "", Adjusted = ""),
+  blk(df_an, "umc_f",    umc_lab, "noso", tidy_or(mA)),
+  blk(df_an, "age_band", "Age at onset (total effect, unadjusted)", "noso",
+      tidy_or(mAgeN_all)),
+  tibble(Characteristic = sprintf("PANEL B. Age-eligible cases (n = %d)", nrow(df_el)),
+         n_out = "", Adjusted = ""),
+  blk(df_el, "umc_f",    umc_lab, "noso", tidy_or(mB0)),
+  blk(df_el, "vacc_f",   "Vaccination status", "noso", tidy_or(mB1)),
+  blk(df_el, "age_band", "Age at onset (total effect, unadjusted)", "noso",
+      tidy_or(mAgeN_el))
+) |>
+  rename(`Nosocomial/total (%)` = n_out, `OR (95% CI)` = Adjusted)
+
+cat("\n-- TABLE 3.2 Factors associated with nosocomial vs community acquisition --\n")
+print(tab_noso, n = Inf)
+write_csv(tab_noso, file.path(out_dir, "tab_nosocomial_factors.csv"))
+
+split_fit <- function(keep_src, src_lab) {
+  d <- df_el |> filter(source_province %in% c("community", keep_src))
+  bind_rows(
+    glm(as.formula(paste0("noso ~ umc_f + age_band", med_rhs)), d, family = binomial) |>
+      tidy_or("umc_fYes") |> mutate(Effect = umc_lab),
+    glm(as.formula(paste0("noso ~ vacc_f + age_band + umc_f", cal_rhs)), d,
+        family = binomial) |>
+      tidy_or("vacc_fUnvaccinated") |> mutate(Effect = "Unvaccinated")
+  ) |> mutate(Source = src_lab)
+}
+tab_src <- bind_rows(split_fit("nch", "National Children's Hospital"),
+                     split_fit("other h", "Provincial hospitals"))
+
+cat("\n-- TABLE 3.3 Nosocomial acquisition by hospital of acquisition --\n")
+print(tab_src |> select(Effect, Source, n, `aOR (95% CI)` = txt, p) |>
+        arrange(Effect, Source), n = Inf)
+write_csv(tab_src |> select(Effect, Source, n, aOR = txt, p),
+          file.path(out_dir, "tab_nosocomial_by_source.csv"))
+
+cat("\n-- 1.2 falsification: sex should show no association --\n")
+if ("sex" %in% names(df_case)) {
+  print(tidy_or(glm(noso ~ factor(sex) + age_band, df_an, family = binomial),
+                "factor(sex)M"))
+} else cat("   no sex column in df_case\n")
+
+cat("\n-- 1.3 E-values --\n")
+print(bind_rows(
+  tidy_or(mB0, "umc_fYes") |>
+    mutate(Effect = umc_lab, p0 = mean(df_el$noso[which(!df_el$umc)])),
+  tidy_or(mB1, "vacc_fUnvaccinated") |>
+    mutate(Effect = "Unvaccinated", p0 = mean(df_el$noso[df_el$unvacc == 0]))) |>
+    mutate(rr = or_to_rr(or, p0),
+           rr_null = if_else(or > 1, or_to_rr(lo, p0), or_to_rr(hi, p0)),
+           e_point = round(evalue(rr), 2),
+           e_ci    = round(if_else(lo < 1 & hi > 1, 1, evalue(rr_null)), 2)) |>
+    select(Effect, aOR = txt, rr, e_point, e_ci))
+
+cat("\n-- 1.4 NOT identifiable: direct effect of", umc_lab, "on nosocomial --\n")
+print(adjustmentSets(g, "med", "noso", effect = "direct"))
+
+# =============================================================================
+# SECTION 2. WHY THESE CHILDREN ARE VULNERABLE
+# =============================================================================
+cat("\n\n===== SECTION 2: WHY THESE CHILDREN ARE VULNERABLE =====\n")
+
+cat("\n-- 2.0 sensitivity: extra calendar adjustment on med -> vacc --\n")
+print(bind_rows(
+  tidy_or(mC, "umc_fYes") |> mutate(model = "age only (dagitty set)"),
+  glm(unvacc ~ umc_f + age_band + ns(t_num, 3), df_el, family = binomial) |>
+    tidy_or("umc_fYes") |> mutate(model = "age + calendar spline")) |>
+    select(model, aOR = txt, p))
+
+tab_vac <- bind_rows(
+  blk(df_el, "umc_f",    umc_lab, "unvacc", tidy_or(mC)),
+  blk(df_el, "age_band", "Age at onset (total effect, unadjusted)", "unvacc",
+      tidy_or(mAgeV))
+) |>
+  rename(`Unvaccinated/total (%)` = n_out, `OR (95% CI)` = Adjusted)
+
+cat("\n-- TABLE 3.4 Unvaccinated status among age-eligible cases --\n")
+print(tab_vac, n = Inf)
+write_csv(tab_vac, file.path(out_dir, "tab_vaccination_gap.csv"))
+
+sev_side <- function(v, header, outcome, adj) blk(df_sev, v, header, outcome, adj)
+
+tab_sev <- bind_rows(
+  sev_side("umc_f",    umc_lab,                                  "sev1", tidy_or(mS1t)),
+  sev_side("vacc_f",   "Vaccination status",                     "sev1", tidy_or(mS1)),
+  sev_side("age_band", "Age at onset (total effect, unadjusted)", "sev1", tidy_or(mAgeS1))
+) |>
+  rename(`Sev >=1 / total (%)` = n_out, `OR for >=1 (95% CI)` = Adjusted) |>
+  bind_cols(
+    bind_rows(
+      sev_side("umc_f",    umc_lab,                                  "sev2", tidy_or(mS2t)),
+      sev_side("vacc_f",   "Vaccination status",                     "sev2", tidy_or(mS2)),
+      sev_side("age_band", "Age at onset (total effect, unadjusted)", "sev2", tidy_or(mAgeS2))
+    ) |> select(`Sev 2 / total (%)` = n_out, `OR for >=2 (95% CI)` = Adjusted)
+  )
+
+cat("\n-- TABLE 3.5 Severity among age-eligible cases, at both cut points --\n")
+print(tab_sev, n = Inf)
+write_csv(tab_sev, file.path(out_dir, "tab_severity.csv"))
+
+cat("\n-- 2c. proportional odds check: the two cut points disagree --\n")
+print(left_join(tidy_or(mS1) |> select(term, or_ge1 = or, lo1 = lo, hi1 = hi),
+                tidy_or(mS2) |> select(term, or_ge2 = or, lo2 = lo, hi2 = hi),
+                by = "term"))
+
+cat("\n-- 2d. severity in the group these models exclude (age <9 m) --\n")
+print(df_an |> filter(!is.na(sev_n)) |> count(elig, sev_n) |>
+        mutate(pct = round(100 * n / sum(n), 1), .by = elig), n = Inf)
+
+# =============================================================================
+# FIGURE
+# =============================================================================
+blue     <- "#2563EB"
+dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+
+forest <- function(d, xlab, x_breaks = c(0.5, 1, 2, 5, 10)) {
+  ggplot(d, aes(x = or, y = lab)) +
+    geom_vline(xintercept = 1, linetype = "dashed", colour = "grey40") +
+    geom_linerange(aes(xmin = lo, xmax = hi), colour = blue) +
+    geom_point(colour = blue) +
+    # value column: anchored at the panel edge, drawn in the right margin
+    geom_text(aes(x = Inf, label = txt), hjust = -0.06, colour = "grey15") +
+    facet_grid(grp ~ ., scales = "free_y", space = "free_y", switch = "y") +
+    scale_x_log10(breaks = x_breaks, labels = x_breaks) +
+    scale_y_discrete(expand = expansion(add = 0.6)) +
+    coord_cartesian(clip = "off") +
+    labs(x = xlab, y = NULL) +
+    theme_minimal() +
+    theme(panel.grid.minor   = element_blank(),
+          panel.grid.major.y = element_blank(),
+          strip.placement    = "outside",
+          strip.text.y.left  = element_text(angle = 0, hjust = 0, face = "bold"),
+          panel.spacing.y    = unit(1.2, "lines"),
+          axis.title.x       = element_text(hjust = 0.5),
+          plot.margin        = margin(5.5, 130, 5.5, 5.5))   # right margin holds the column
+}
+
+# ---- Figure A: factors associated with nosocomial acquisition --------------
+figA <- bind_rows(
+  tidy_or(mB0, "umc_fYes") |> mutate(grp = umc_lab, lab = "All nosocomial"),
+  tab_src |> filter(Effect == umc_lab, Source == "National Children's Hospital") |>
+    mutate(grp = umc_lab, lab = "NCH-acquired"),
+  tab_src |> filter(Effect == umc_lab, Source == "Provincial hospitals") |>
+    mutate(grp = umc_lab, lab = "Provincial-acquired"),
+  tidy_or(mB1, "vacc_fUnvaccinated") |> mutate(grp = "Unvaccinated", lab = "All nosocomial"),
+  tab_src |> filter(Effect == "Unvaccinated", Source == "National Children's Hospital") |>
+    mutate(grp = "Unvaccinated", lab = "NCH-acquired"),
+  tab_src |> filter(Effect == "Unvaccinated", Source == "Provincial hospitals") |>
+    mutate(grp = "Unvaccinated", lab = "Provincial-acquired")
+) |>
+  mutate(grp = factor(grp, levels = c(umc_lab, "Unvaccinated")),
+         lab = factor(lab, levels = rev(c("All nosocomial", "NCH-acquired",
+                                          "Provincial-acquired"))))
+
+p_A <- forest(figA, "Adjusted odds ratio for nosocomial vs community acquisition")
+p_A
+
+# ---- Figure B: vaccination coverage and severity ---------------------------
+figB <- bind_rows(
+  tidy_or(mC,   "umc_fYes") |> mutate(grp = umc_lab, lab = "Unvaccinated status"),
+  tidy_or(mS1t, "umc_fYes") |> mutate(grp = umc_lab, lab = "Any severity"),
+  tidy_or(mS2t, "umc_fYes") |> mutate(grp = umc_lab, lab = "Critical illness"),
+  tidy_or(mS1,  "vacc_fUnvaccinated") |> mutate(grp = "Unvaccinated", lab = "Any severity"),
+  tidy_or(mS2,  "vacc_fUnvaccinated") |> mutate(grp = "Unvaccinated", lab = "Critical illness")
+) |>
+  mutate(grp = factor(grp, levels = c(umc_lab, "Unvaccinated")),
+         lab = factor(lab, levels = rev(c("Unvaccinated status", "Any severity",
+                                          "Critical illness"))))
+
+p_B <- forest(figB, "Adjusted odds ratio")
+p_B
+
+ggsave(file.path(out_dir, "c2_figA_results.png"), p_A, width = 7, height = 2.3, dpi = 300, bg = "white")
+
+ggsave(file.path(out_dir, "c2_figB_results.png"), p_B, width = 7, height = 2.1, dpi = 300, bg = "white")
+
+
+# ggsave(file.path(out_dir, "fig_results.png"), p_all, width = 9, height = 7, dpi = 300, bg = "white")
+```
+
+
+```{r}
+tmp <- df_case |> 
+  filter(province == "Nam Dinh")
+table(tmp$source_province)
+```
+

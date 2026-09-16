@@ -57,7 +57,7 @@ Read raw data:
 
 ```{r}
 df <- file.path(path2data, inp_sero) |> 
-  read.xlsx(sheet = 1) |> 
+  read.xlsx(sheet = 1, detectDates = T) |> 
   clean_names() |> 
   # Make sure a, b, c, d are numeric
   mutate(
@@ -150,10 +150,9 @@ df |>
 
 ```{r}
 df <- df |>
-  mutate(across(c(dob, date_collect), dmy)) |>
+  # mutate(across(c(dob, date_collect), ymd)) |>
   select(
     sample_id,
-    sampling_protocol,
     date_collect,
     hospital,
     gender,

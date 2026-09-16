@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.27">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Result 3: Hospital-community model – Thinh’s DPhil</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-ed96de9b727972fe78a7b5d16c58bf87.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-a35d343c8bdbcb87d3b82ed68e48a46c.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar docked quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./03_res3.html">Result 3: Hospital-community model</a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Thinh’s DPhil</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./01_res1.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Result 1</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./02_res2.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Result 2</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./03_res3.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Result 3: Hospital-community model</span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#constant" id="toc-constant" class="nav-link active" data-scroll-target="#constant">Constant</a></li>
+  <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages">Packages</a></li>
+  <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  <li><a href="#model" id="toc-model" class="nav-link" data-scroll-target="#model">Model</a></li>
+  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">Parameters</a>
+  <ul class="collapse">
+  <li><a href="#alpha_bar" id="toc-alpha_bar" class="nav-link" data-scroll-target="#alpha_bar">alpha_bar</a></li>
+  <li><a href="#alpha_m" id="toc-alpha_m" class="nav-link" data-scroll-target="#alpha_m">alpha_M</a></li>
+  <li><a href="#delta_m" id="toc-delta_m" class="nav-link" data-scroll-target="#delta_m">delta_M</a></li>
+  </ul></li>
+  <li><a href="#disease-free-equilibrium-check" id="toc-disease-free-equilibrium-check" class="nav-link" data-scroll-target="#disease-free-equilibrium-check">Disease-free equilibrium check</a></li>
+  <li><a href="#calibration" id="toc-calibration" class="nav-link" data-scroll-target="#calibration">Calibration</a>
+  <ul class="collapse">
+  <li><a href="#prior" id="toc-prior" class="nav-link" data-scroll-target="#prior">Prior</a></li>
+  <li><a href="#test" id="toc-test" class="nav-link" data-scroll-target="#test">Test</a></li>
+  <li><a href="#fit" id="toc-fit" class="nav-link" data-scroll-target="#fit">Fit</a></li>
+  </ul></li>
+  <li><a href="#relationship-between-s_h-and-s_c" id="toc-relationship-between-s_h-and-s_c" class="nav-link" data-scroll-target="#relationship-between-s_h-and-s_c">Relationship between <span class="math inline">\(s_H\)</span> and <span class="math inline">\(s_C\)</span></a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Result 3: Hospital-community model</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="constant" class="level2">
+<h2 class="anchored" data-anchor-id="constant">Constant</h2>
+<p>Path to data:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>path2data <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"C:/Users/ongph/github/data/dphil_res3"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Files names:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Case notification</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>case_hcmc <span class="ot">&lt;-</span> <span class="st">"measles_hcmc_24-25.rds"</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>case_hn <span class="ot">&lt;-</span> <span class="st">"measles_hn_final.rds"</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>case_ch2 <span class="ot">&lt;-</span> <span class="st">"clinical_cases_ch2.rds"</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Census of HCMC</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>census_file <span class="ot">&lt;-</span> <span class="st">"census2019_hcm.rds"</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Campaign HCMC</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>campaign_file <span class="ot">&lt;-</span> <span class="st">"campaign_hcmc_2425.csv"</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co"># CH1 outpatient</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>ch1_out_file <span class="ot">&lt;-</span> <span class="st">"ch1_visit_day.rds"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="packages" class="level2">
+<h2 class="anchored" data-anchor-id="packages">Packages</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>required <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"tidyverse"</span>, <span class="st">"fitdistrplus"</span>, <span class="st">"ggsci"</span>, <span class="st">"BayesianTools"</span>, <span class="st">"deSolve"</span>, <span class="st">"BayesianTools"</span>, <span class="st">"patchwork"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Installing those that are not installed yet:</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>to_install <span class="ot">&lt;-</span> required[<span class="sc">!</span> required <span class="sc">%in%</span> <span class="fu">installed.packages</span>()[, <span class="st">"Package"</span>]]</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">length</span>(to_install)) <span class="fu">install.packages</span>(to_install)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Loading the packages for interactive use:</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">invisible</span>(<span class="fu">sapply</span>(required, library, <span class="at">character.only =</span> <span class="cn">TRUE</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="functions" class="level2">
+<h2 class="anchored" data-anchor-id="functions">Functions</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>plot_interval <span class="ot">&lt;-</span> <span class="cf">function</span>(data, var, <span class="at">trim =</span> <span class="fl">0.99</span>,</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>                          <span class="at">xlab =</span> <span class="st">"days"</span>, <span class="at">ylab =</span> <span class="st">"cases"</span>) {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">pull</span>(data, {{ var }})</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  x <span class="ot">&lt;-</span> x[<span class="sc">!</span><span class="fu">is.na</span>(x)]</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  stats <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">stat =</span> <span class="fu">c</span>(<span class="st">"mean"</span>, <span class="st">"median"</span>),</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                  <span class="at">value =</span> <span class="fu">c</span>(<span class="fu">mean</span>(x), <span class="fu">median</span>(x)))</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(data, <span class="fu">aes</span>({{ var }})) <span class="sc">+</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_histogram</span>(<span class="at">binwidth =</span> <span class="dv">1</span>, <span class="at">boundary =</span> <span class="sc">-</span><span class="fl">0.5</span>,</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>                   <span class="at">fill =</span> <span class="st">"grey80"</span>, <span class="at">colour =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_vline</span>(<span class="at">data =</span> stats, <span class="fu">aes</span>(<span class="at">xintercept =</span> value, <span class="at">colour =</span> stat, <span class="at">linetype =</span> stat),</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>               <span class="at">linewidth =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="at">mean =</span> <span class="st">"black"</span>, <span class="at">median =</span> <span class="st">"grey40"</span>)) <span class="sc">+</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_linetype_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="at">mean =</span> <span class="dv">1</span>, <span class="at">median =</span> <span class="dv">2</span>)) <span class="sc">+</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">coord_cartesian</span>(<span class="at">xlim =</span> <span class="fu">quantile</span>(x, <span class="fu">c</span>(<span class="dv">0</span>, trim))) <span class="sc">+</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> xlab, <span class="at">y =</span> ylab, <span class="at">colour =</span> <span class="cn">NULL</span>, <span class="at">linetype =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_classic</span>() <span class="sc">+</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>)</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>Census:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>df_census <span class="ot">&lt;-</span> <span class="fu">file.path</span>(path2data, census_file) <span class="sc">|&gt;</span> </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">readRDS</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Case notification HCMC (for calibration):</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>df_hcmc <span class="ot">&lt;-</span> <span class="fu">file.path</span>(path2data, case_hcmc) <span class="sc">|&gt;</span> </span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">readRDS</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">ngay_kp =</span> <span class="fu">as.Date</span>(<span class="fu">as.numeric</span>(ngay_kp), <span class="at">origin =</span> <span class="st">"1899-12-30"</span>),</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">onset_delay =</span> ngay_nv <span class="sc">-</span> ngay_kp,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">inpatient =</span> <span class="fu">if_else</span>(tinh_trang <span class="sc">==</span> <span class="st">"Điều trị ngoại trú"</span>, F, T)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>National Children’s Hospital line list:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>df_hn <span class="ot">&lt;-</span> <span class="fu">file.path</span>(path2data, case_hn) <span class="sc">|&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">readRDS</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">discharge_date =</span> <span class="fu">dmy</span>(date.of.out.hospital),</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">admission_date =</span> <span class="fu">dmy</span>(admission_date),</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Clean one row with discharge - admission = -358</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">discharge_date =</span> <span class="fu">if_else</span>(</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">between</span>(<span class="fu">as.numeric</span>(discharge_date <span class="sc">-</span> admission_date), <span class="sc">-</span><span class="dv">366</span>, <span class="sc">-</span><span class="dv">300</span>),</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>      discharge_date <span class="sc">%m+%</span> <span class="fu">years</span>(<span class="dv">1</span>),</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>      discharge_date,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">missing =</span> discharge_date</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">stay =</span> discharge_date <span class="sc">-</span> admission_date,</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">onset_delay =</span> admission_date <span class="sc">-</span> onset_date</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Children’s Hospital 2 in HCMC</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>df_ch2 <span class="ot">&lt;-</span> <span class="fu">file.path</span>(path2data, case_ch2) <span class="sc">|&gt;</span> </span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">readRDS</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">year</span>(admission) <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">2024</span>, <span class="dv">2025</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Vaccination campaign</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>df_cp <span class="ot">&lt;-</span> <span class="fu">file.path</span>(path2data, campaign_file) <span class="sc">|&gt;</span> </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">read.csv</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">total =</span> total <span class="sc">-</span> health_worker</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Children’s Hospital 1 outpatient</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>df_ch1_out <span class="ot">&lt;-</span> <span class="fu">file.path</span>(path2data, ch1_out_file) <span class="sc">|&gt;</span> </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">readRDS</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="model" class="level2">
+<h2 class="anchored" data-anchor-id="model">Model</h2>
+<p><img src="img/mod_res3_1.png" class="img-fluid"></p>
+<p><span class="math display">\[\begin{aligned}
+\frac{dS_C}{dt}
+&amp;= -\lambda_C S_C - \xi \alpha S_C + \delta S_H, \\[4pt]
+\frac{dE_C}{dt}
+&amp;= \lambda_C S_C - (\sigma + \xi \alpha)E_C + \delta E_H, \\[4pt]
+\frac{dI_C^{\mathrm{pre}}}{dt}
+&amp;= \sigma E_C - (\eta + \xi \alpha)I_C^{\mathrm{pre}}
+   + \delta I_H^{\mathrm{pre}}, \\[4pt]
+\frac{dI_C^{\mathrm{post}}}{dt}
+&amp;= \eta I_C^{\mathrm{pre}}
+   - (\gamma + \alpha_M)I_C^{\mathrm{post}}, \\[4pt]
+\frac{dR_C}{dt}
+&amp;= \gamma I_C^{\mathrm{post}}
+   - \alpha R_C + \delta R_H + \delta_M Q.
+\\[4pt]
+\frac{dS_H}{dt}
+&amp;= \xi \alpha S_C - \lambda_H S_H - \delta S_H, \\[4pt]
+\frac{dE_H}{dt}
+&amp;= \lambda_H S_H + \xi \alpha E_C - (\sigma + \delta)E_H, \\[4pt]
+\frac{dI_H^{\mathrm{pre}}}{dt}
+&amp;= \sigma E_H + \xi \alpha I_C^{\mathrm{pre}}
+   - (\eta + \delta)I_H^{\mathrm{pre}}, \\[4pt]
+\frac{dI_H^{\mathrm{post}}}{dt}
+&amp;= \eta I_H^{\mathrm{pre}}
+   + \alpha_M I_C^{\mathrm{post}}
+   - (\gamma + \theta)I_H^{\mathrm{post}}, \\[4pt]
+\frac{dQ}{dt}
+&amp;= \theta I_H^{\mathrm{post}} - \delta_M Q, \\[4pt]
+\frac{dR_H}{dt}
+&amp;= \gamma I_H^{\mathrm{post}} + \alpha R_C - \delta R_H.
+\end{aligned}\]</span></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>state_names <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"S_C"</span>, <span class="st">"E_C"</span>, <span class="st">"I_C_pre"</span>, <span class="st">"I_C_post"</span>, <span class="st">"R_C"</span>,</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"S_H"</span>, <span class="st">"E_H"</span>, <span class="st">"I_H_pre"</span>, <span class="st">"I_H_post"</span>, <span class="st">"Q"</span>, <span class="st">"R_H"</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"cum_onset_C"</span>, <span class="st">"cum_onset_H"</span>, <span class="st">"cum_noso"</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"cum_adm_post"</span>, <span class="st">"cum_inf_C"</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>param_names <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"beta"</span>, <span class="st">"kappa"</span>, <span class="st">"theta"</span>, <span class="st">"xi_alpha"</span>, <span class="st">"alpha"</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"alpha_M"</span>, <span class="st">"delta_M"</span>, <span class="st">"sigma"</span>, <span class="st">"eta"</span>, <span class="st">"gamma"</span>, <span class="st">"delta"</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>measles_ode <span class="ot">&lt;-</span> <span class="cf">function</span>(t, y, p) {</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="do">## ---- states --------------------------------------------------------------</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  S_C <span class="ot">&lt;-</span> y[[<span class="st">"S_C"</span>]]; E_C <span class="ot">&lt;-</span> y[[<span class="st">"E_C"</span>]]</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  I_C_pre <span class="ot">&lt;-</span> y[[<span class="st">"I_C_pre"</span>]]; I_C_post <span class="ot">&lt;-</span> y[[<span class="st">"I_C_post"</span>]]; R_C <span class="ot">&lt;-</span> y[[<span class="st">"R_C"</span>]]</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  S_H <span class="ot">&lt;-</span> y[[<span class="st">"S_H"</span>]]; E_H <span class="ot">&lt;-</span> y[[<span class="st">"E_H"</span>]]</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>  I_H_pre <span class="ot">&lt;-</span> y[[<span class="st">"I_H_pre"</span>]]; I_H_post <span class="ot">&lt;-</span> y[[<span class="st">"I_H_post"</span>]]</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>  Q <span class="ot">&lt;-</span> y[[<span class="st">"Q"</span>]]; R_H <span class="ot">&lt;-</span> y[[<span class="st">"R_H"</span>]]</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>  <span class="do">## ---- parameters ----------------------------------------------------------</span></span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>  beta     <span class="ot">&lt;-</span> p[[<span class="st">"beta"</span>]]</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>  kappa    <span class="ot">&lt;-</span> p[[<span class="st">"kappa"</span>]]</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>  theta    <span class="ot">&lt;-</span> p[[<span class="st">"theta"</span>]]</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>  xi_alpha <span class="ot">&lt;-</span> p[[<span class="st">"xi_alpha"</span>]]     <span class="co"># admission rate for susceptible-like states</span></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>  alpha    <span class="ot">&lt;-</span> p[[<span class="st">"alpha"</span>]]        <span class="co"># admission rate for immune states</span></span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>  alpha_M  <span class="ot">&lt;-</span> p[[<span class="st">"alpha_M"</span>]]      <span class="co"># measles-driven admission, post-rash</span></span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>  delta    <span class="ot">&lt;-</span> p[[<span class="st">"delta"</span>]]        <span class="co"># general discharge</span></span>
+<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>  delta_M  <span class="ot">&lt;-</span> p[[<span class="st">"delta_M"</span>]]      <span class="co"># discharge from isolation</span></span>
+<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>  sigma    <span class="ot">&lt;-</span> p[[<span class="st">"sigma"</span>]]</span>
+<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>  eta      <span class="ot">&lt;-</span> p[[<span class="st">"eta"</span>]]</span>
+<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>  gamma    <span class="ot">&lt;-</span> p[[<span class="st">"gamma"</span>]]</span>
+<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-32"><a href="#cb11-32" aria-hidden="true" tabindex="-1"></a>  <span class="do">## ---- forces of infection -------------------------------------------------</span></span>
+<span id="cb11-33"><a href="#cb11-33" aria-hidden="true" tabindex="-1"></a>  N_C     <span class="ot">&lt;-</span> S_C <span class="sc">+</span> E_C <span class="sc">+</span> I_C_pre <span class="sc">+</span> I_C_post <span class="sc">+</span> R_C</span>
+<span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>  N_H_mix <span class="ot">&lt;-</span> S_H <span class="sc">+</span> E_H <span class="sc">+</span> I_H_pre <span class="sc">+</span> I_H_post <span class="sc">+</span> R_H      <span class="co"># Q is isolated</span></span>
+<span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>  lambda_C <span class="ot">&lt;-</span> beta         <span class="sc">*</span> (I_C_pre <span class="sc">+</span> I_C_post) <span class="sc">/</span> N_C</span>
+<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>  lambda_H <span class="ot">&lt;-</span> kappa <span class="sc">*</span> beta <span class="sc">*</span> (I_H_pre <span class="sc">+</span> I_H_post) <span class="sc">/</span> N_H_mix</span>
+<span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a>  <span class="do">## ---- named flows ---------------------------------------------------------</span></span>
+<span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a>  infection_C <span class="ot">&lt;-</span> lambda_C <span class="sc">*</span> S_C          <span class="co"># new infections in the community</span></span>
+<span id="cb11-41"><a href="#cb11-41" aria-hidden="true" tabindex="-1"></a>  infection_H <span class="ot">&lt;-</span> lambda_H <span class="sc">*</span> S_H          <span class="co"># new infections in hospital</span></span>
+<span id="cb11-42"><a href="#cb11-42" aria-hidden="true" tabindex="-1"></a>  onset_C     <span class="ot">&lt;-</span> eta <span class="sc">*</span> I_C_pre           <span class="co"># rash appears, in the community</span></span>
+<span id="cb11-43"><a href="#cb11-43" aria-hidden="true" tabindex="-1"></a>  onset_H     <span class="ot">&lt;-</span> eta <span class="sc">*</span> I_H_pre           <span class="co"># rash appears, already an inpatient</span></span>
+<span id="cb11-44"><a href="#cb11-44" aria-hidden="true" tabindex="-1"></a>  admit_rash  <span class="ot">&lt;-</span> alpha_M <span class="sc">*</span> I_C_post      <span class="co"># admitted with rash present</span></span>
+<span id="cb11-45"><a href="#cb11-45" aria-hidden="true" tabindex="-1"></a>  admit_prod  <span class="ot">&lt;-</span> xi_alpha <span class="sc">*</span> I_C_pre      <span class="co"># admitted for another reason, prodromal</span></span>
+<span id="cb11-46"><a href="#cb11-46" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-47"><a href="#cb11-47" aria-hidden="true" tabindex="-1"></a>  <span class="do">## ---- community -----------------------------------------------------------</span></span>
+<span id="cb11-48"><a href="#cb11-48" aria-hidden="true" tabindex="-1"></a>  dS_C      <span class="ot">&lt;-</span> <span class="sc">-</span>infection_C <span class="sc">-</span> xi_alpha <span class="sc">*</span> S_C <span class="sc">+</span> delta <span class="sc">*</span> S_H</span>
+<span id="cb11-49"><a href="#cb11-49" aria-hidden="true" tabindex="-1"></a>  dE_C      <span class="ot">&lt;-</span>  infection_C <span class="sc">-</span> (sigma <span class="sc">+</span> xi_alpha) <span class="sc">*</span> E_C <span class="sc">+</span> delta <span class="sc">*</span> E_H</span>
+<span id="cb11-50"><a href="#cb11-50" aria-hidden="true" tabindex="-1"></a>  dI_C_pre  <span class="ot">&lt;-</span>  sigma <span class="sc">*</span> E_C <span class="sc">-</span> onset_C <span class="sc">-</span> admit_prod <span class="sc">+</span> delta <span class="sc">*</span> I_H_pre</span>
+<span id="cb11-51"><a href="#cb11-51" aria-hidden="true" tabindex="-1"></a>  dI_C_post <span class="ot">&lt;-</span>  onset_C <span class="sc">-</span> gamma <span class="sc">*</span> I_C_post <span class="sc">-</span> admit_rash</span>
+<span id="cb11-52"><a href="#cb11-52" aria-hidden="true" tabindex="-1"></a>  dR_C      <span class="ot">&lt;-</span>  gamma <span class="sc">*</span> I_C_post <span class="sc">-</span> alpha <span class="sc">*</span> R_C <span class="sc">+</span> delta <span class="sc">*</span> R_H <span class="sc">+</span> delta_M <span class="sc">*</span> Q</span>
+<span id="cb11-53"><a href="#cb11-53" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-54"><a href="#cb11-54" aria-hidden="true" tabindex="-1"></a>  <span class="do">## ---- hospital ------------------------------------------------------------</span></span>
+<span id="cb11-55"><a href="#cb11-55" aria-hidden="true" tabindex="-1"></a>  dS_H      <span class="ot">&lt;-</span>  xi_alpha <span class="sc">*</span> S_C <span class="sc">-</span> infection_H <span class="sc">-</span> delta <span class="sc">*</span> S_H</span>
+<span id="cb11-56"><a href="#cb11-56" aria-hidden="true" tabindex="-1"></a>  dE_H      <span class="ot">&lt;-</span>  infection_H <span class="sc">+</span> xi_alpha <span class="sc">*</span> E_C <span class="sc">-</span> (sigma <span class="sc">+</span> delta) <span class="sc">*</span> E_H</span>
+<span id="cb11-57"><a href="#cb11-57" aria-hidden="true" tabindex="-1"></a>  dI_H_pre  <span class="ot">&lt;-</span>  sigma <span class="sc">*</span> E_H <span class="sc">+</span> admit_prod <span class="sc">-</span> onset_H <span class="sc">-</span> delta <span class="sc">*</span> I_H_pre</span>
+<span id="cb11-58"><a href="#cb11-58" aria-hidden="true" tabindex="-1"></a>  dI_H_post <span class="ot">&lt;-</span>  onset_H <span class="sc">+</span> admit_rash <span class="sc">-</span> (gamma <span class="sc">+</span> theta) <span class="sc">*</span> I_H_post</span>
+<span id="cb11-59"><a href="#cb11-59" aria-hidden="true" tabindex="-1"></a>  dQ        <span class="ot">&lt;-</span>  theta <span class="sc">*</span> I_H_post <span class="sc">-</span> delta_M <span class="sc">*</span> Q</span>
+<span id="cb11-60"><a href="#cb11-60" aria-hidden="true" tabindex="-1"></a>  dR_H      <span class="ot">&lt;-</span>  gamma <span class="sc">*</span> I_H_post <span class="sc">+</span> alpha <span class="sc">*</span> R_C <span class="sc">-</span> delta <span class="sc">*</span> R_H</span>
+<span id="cb11-61"><a href="#cb11-61" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-62"><a href="#cb11-62" aria-hidden="true" tabindex="-1"></a>  <span class="do">## ---- cumulative trackers -------------------------------------------------</span></span>
+<span id="cb11-63"><a href="#cb11-63" aria-hidden="true" tabindex="-1"></a>  dcum_onset_C  <span class="ot">&lt;-</span> onset_C</span>
+<span id="cb11-64"><a href="#cb11-64" aria-hidden="true" tabindex="-1"></a>  dcum_onset_H  <span class="ot">&lt;-</span> onset_H</span>
+<span id="cb11-65"><a href="#cb11-65" aria-hidden="true" tabindex="-1"></a>  dcum_noso     <span class="ot">&lt;-</span> infection_H</span>
+<span id="cb11-66"><a href="#cb11-66" aria-hidden="true" tabindex="-1"></a>  dcum_adm_post <span class="ot">&lt;-</span> admit_rash</span>
+<span id="cb11-67"><a href="#cb11-67" aria-hidden="true" tabindex="-1"></a>  dcum_inf_C    <span class="ot">&lt;-</span> infection_C</span>
+<span id="cb11-68"><a href="#cb11-68" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-69"><a href="#cb11-69" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="fu">c</span>(dS_C, dE_C, dI_C_pre, dI_C_post, dR_C,</span>
+<span id="cb11-70"><a href="#cb11-70" aria-hidden="true" tabindex="-1"></a>         dS_H, dE_H, dI_H_pre, dI_H_post, dQ, dR_H,</span>
+<span id="cb11-71"><a href="#cb11-71" aria-hidden="true" tabindex="-1"></a>         dcum_onset_C, dcum_onset_H, dcum_noso, dcum_adm_post, dcum_inf_C))</span>
+<span id="cb11-72"><a href="#cb11-72" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-73"><a href="#cb11-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-74"><a href="#cb11-74" aria-hidden="true" tabindex="-1"></a><span class="co"># Model helpers</span></span>
+<span id="cb11-75"><a href="#cb11-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-76"><a href="#cb11-76" aria-hidden="true" tabindex="-1"></a><span class="do">## initial state: disease-free split of each population, plus a community seed</span></span>
+<span id="cb11-77"><a href="#cb11-77" aria-hidden="true" tabindex="-1"></a>init_state <span class="ot">&lt;-</span> <span class="cf">function</span>(s_C0, s_H0, seed) {</span>
+<span id="cb11-78"><a href="#cb11-78" aria-hidden="true" tabindex="-1"></a>  y <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">S_C =</span> s_C0 <span class="sc">*</span> N_C0 <span class="sc">-</span> seed,</span>
+<span id="cb11-79"><a href="#cb11-79" aria-hidden="true" tabindex="-1"></a>         <span class="at">E_C =</span> seed,</span>
+<span id="cb11-80"><a href="#cb11-80" aria-hidden="true" tabindex="-1"></a>         <span class="at">I_C_pre =</span> <span class="dv">0</span>, <span class="at">I_C_post =</span> <span class="dv">0</span>,</span>
+<span id="cb11-81"><a href="#cb11-81" aria-hidden="true" tabindex="-1"></a>         <span class="at">R_C =</span> (<span class="dv">1</span> <span class="sc">-</span> s_C0) <span class="sc">*</span> N_C0,</span>
+<span id="cb11-82"><a href="#cb11-82" aria-hidden="true" tabindex="-1"></a>         <span class="at">S_H =</span> s_H0 <span class="sc">*</span> N_H0,</span>
+<span id="cb11-83"><a href="#cb11-83" aria-hidden="true" tabindex="-1"></a>         <span class="at">E_H =</span> <span class="dv">0</span>, <span class="at">I_H_pre =</span> <span class="dv">0</span>, <span class="at">I_H_post =</span> <span class="dv">0</span>, <span class="at">Q =</span> <span class="dv">0</span>,</span>
+<span id="cb11-84"><a href="#cb11-84" aria-hidden="true" tabindex="-1"></a>         <span class="at">R_H =</span> (<span class="dv">1</span> <span class="sc">-</span> s_H0) <span class="sc">*</span> N_H0,</span>
+<span id="cb11-85"><a href="#cb11-85" aria-hidden="true" tabindex="-1"></a>         <span class="at">cum_onset_C =</span> <span class="dv">0</span>, <span class="at">cum_onset_H =</span> <span class="dv">0</span>, <span class="at">cum_noso =</span> <span class="dv">0</span>,</span>
+<span id="cb11-86"><a href="#cb11-86" aria-hidden="true" tabindex="-1"></a>         <span class="at">cum_adm_post =</span> <span class="dv">0</span>, <span class="at">cum_inf_C =</span> <span class="dv">0</span>)</span>
+<span id="cb11-87"><a href="#cb11-87" aria-hidden="true" tabindex="-1"></a>  y[state_names]</span>
+<span id="cb11-88"><a href="#cb11-88" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-89"><a href="#cb11-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-90"><a href="#cb11-90" aria-hidden="true" tabindex="-1"></a><span class="do">## quantities implied by the sampled parameters</span></span>
+<span id="cb11-91"><a href="#cb11-91" aria-hidden="true" tabindex="-1"></a><span class="do">##   xi    odds ratio of susceptibility between hospital and community, so that</span></span>
+<span id="cb11-92"><a href="#cb11-92" aria-hidden="true" tabindex="-1"></a><span class="do">##         the disease-free state is a true fixed point</span></span>
+<span id="cb11-93"><a href="#cb11-93" aria-hidden="true" tabindex="-1"></a><span class="do">##   alpha admission rate for immune children, set so the population-weighted</span></span>
+<span id="cb11-94"><a href="#cb11-94" aria-hidden="true" tabindex="-1"></a><span class="do">##         rate equals the observed general admission rate alpha_bar</span></span>
+<span id="cb11-95"><a href="#cb11-95" aria-hidden="true" tabindex="-1"></a><span class="do">##   D_inf mean time a community case spends infectious, used to convert R_eff</span></span>
+<span id="cb11-96"><a href="#cb11-96" aria-hidden="true" tabindex="-1"></a>derived <span class="ot">&lt;-</span> <span class="cf">function</span>(par) {</span>
+<span id="cb11-97"><a href="#cb11-97" aria-hidden="true" tabindex="-1"></a>  s_C0 <span class="ot">&lt;-</span> par[[<span class="st">"s_C0"</span>]]</span>
+<span id="cb11-98"><a href="#cb11-98" aria-hidden="true" tabindex="-1"></a>  s_H0 <span class="ot">&lt;-</span> par[[<span class="st">"s_H0"</span>]]</span>
+<span id="cb11-99"><a href="#cb11-99" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-100"><a href="#cb11-100" aria-hidden="true" tabindex="-1"></a>  xi       <span class="ot">&lt;-</span> (s_H0 <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> s_C0)) <span class="sc">/</span> (s_C0 <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> s_H0))</span>
+<span id="cb11-101"><a href="#cb11-101" aria-hidden="true" tabindex="-1"></a>  alpha    <span class="ot">&lt;-</span> alpha_bar <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> s_C0 <span class="sc">*</span> (xi <span class="sc">-</span> <span class="dv">1</span>))</span>
+<span id="cb11-102"><a href="#cb11-102" aria-hidden="true" tabindex="-1"></a>  xi_alpha <span class="ot">&lt;-</span> xi <span class="sc">*</span> alpha</span>
+<span id="cb11-103"><a href="#cb11-103" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-104"><a href="#cb11-104" aria-hidden="true" tabindex="-1"></a>  D_inf <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> (eta <span class="sc">+</span> xi_alpha) <span class="sc">+</span> <span class="dv">1</span> <span class="sc">/</span> (gamma <span class="sc">+</span> alpha_M)</span>
+<span id="cb11-105"><a href="#cb11-105" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-106"><a href="#cb11-106" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">xi =</span> xi, <span class="at">alpha =</span> alpha, <span class="at">xi_alpha =</span> xi_alpha, <span class="at">D_inf =</span> D_inf,</span>
+<span id="cb11-107"><a href="#cb11-107" aria-hidden="true" tabindex="-1"></a>       <span class="at">beta =</span> par[[<span class="st">"R_eff"</span>]] <span class="sc">/</span> (D_inf <span class="sc">*</span> s_C0))</span>
+<span id="cb11-108"><a href="#cb11-108" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-109"><a href="#cb11-109" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-110"><a href="#cb11-110" aria-hidden="true" tabindex="-1"></a>make_params <span class="ot">&lt;-</span> <span class="cf">function</span>(par, d) {</span>
+<span id="cb11-111"><a href="#cb11-111" aria-hidden="true" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">beta =</span> d<span class="sc">$</span>beta, <span class="at">kappa =</span> par[[<span class="st">"kappa"</span>]], <span class="at">theta =</span> theta_fixed,</span>
+<span id="cb11-112"><a href="#cb11-112" aria-hidden="true" tabindex="-1"></a>         <span class="at">xi_alpha =</span> d<span class="sc">$</span>xi_alpha, <span class="at">alpha =</span> d<span class="sc">$</span>alpha,</span>
+<span id="cb11-113"><a href="#cb11-113" aria-hidden="true" tabindex="-1"></a>         <span class="at">alpha_M =</span> alpha_M, <span class="at">delta_M =</span> delta_M,</span>
+<span id="cb11-114"><a href="#cb11-114" aria-hidden="true" tabindex="-1"></a>         <span class="at">sigma =</span> sigma, <span class="at">eta =</span> eta, <span class="at">gamma =</span> gamma, <span class="at">delta =</span> delta)</span>
+<span id="cb11-115"><a href="#cb11-115" aria-hidden="true" tabindex="-1"></a>  p[param_names]</span>
+<span id="cb11-116"><a href="#cb11-116" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-117"><a href="#cb11-117" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-118"><a href="#cb11-118" aria-hidden="true" tabindex="-1"></a>solve_model <span class="ot">&lt;-</span> <span class="cf">function</span>(par, times) {</span>
+<span id="cb11-119"><a href="#cb11-119" aria-hidden="true" tabindex="-1"></a>  d <span class="ot">&lt;-</span> <span class="fu">derived</span>(par)</span>
+<span id="cb11-120"><a href="#cb11-120" aria-hidden="true" tabindex="-1"></a>  out <span class="ot">&lt;-</span> <span class="fu">tryCatch</span>(</span>
+<span id="cb11-121"><a href="#cb11-121" aria-hidden="true" tabindex="-1"></a>    <span class="fu">ode</span>(<span class="at">y      =</span> <span class="fu">init_state</span>(par[[<span class="st">"s_C0"</span>]], par[[<span class="st">"s_H0"</span>]], par[[<span class="st">"seed"</span>]]),</span>
+<span id="cb11-122"><a href="#cb11-122" aria-hidden="true" tabindex="-1"></a>        <span class="at">times  =</span> times,</span>
+<span id="cb11-123"><a href="#cb11-123" aria-hidden="true" tabindex="-1"></a>        <span class="at">func   =</span> measles_ode,</span>
+<span id="cb11-124"><a href="#cb11-124" aria-hidden="true" tabindex="-1"></a>        <span class="at">parms  =</span> <span class="fu">make_params</span>(par, d),</span>
+<span id="cb11-125"><a href="#cb11-125" aria-hidden="true" tabindex="-1"></a>        <span class="at">method =</span> <span class="st">"lsoda"</span>, <span class="at">atol =</span> <span class="fl">1e-3</span>, <span class="at">rtol =</span> <span class="fl">1e-6</span>),</span>
+<span id="cb11-126"><a href="#cb11-126" aria-hidden="true" tabindex="-1"></a>    <span class="at">error =</span> <span class="cf">function</span>(e) <span class="cn">NULL</span></span>
+<span id="cb11-127"><a href="#cb11-127" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb11-128"><a href="#cb11-128" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(out) <span class="sc">||</span> <span class="fu">nrow</span>(out) <span class="sc">!=</span> <span class="fu">length</span>(times) <span class="sc">||</span> <span class="fu">anyNA</span>(out)) <span class="fu">return</span>(<span class="cn">NULL</span>)</span>
+<span id="cb11-129"><a href="#cb11-129" aria-hidden="true" tabindex="-1"></a>  out</span>
+<span id="cb11-130"><a href="#cb11-130" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-131"><a href="#cb11-131" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-132"><a href="#cb11-132" aria-hidden="true" tabindex="-1"></a>run_model <span class="ot">&lt;-</span> <span class="cf">function</span>(par, n_weeks, <span class="at">full =</span> <span class="cn">FALSE</span>) {</span>
+<span id="cb11-133"><a href="#cb11-133" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-134"><a href="#cb11-134" aria-hidden="true" tabindex="-1"></a>  out <span class="ot">&lt;-</span> <span class="fu">solve_model</span>(par, <span class="fu">seq.int</span>(<span class="dv">0</span>L, n_weeks <span class="sc">*</span> <span class="dv">7</span>L, <span class="at">by =</span> <span class="dv">7</span>L))</span>
+<span id="cb11-135"><a href="#cb11-135" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(out)) <span class="fu">return</span>(<span class="cn">NULL</span>)</span>
+<span id="cb11-136"><a href="#cb11-136" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-137"><a href="#cb11-137" aria-hidden="true" tabindex="-1"></a>  onset_C <span class="ot">&lt;-</span> <span class="fu">diff</span>(out[, <span class="st">"cum_onset_C"</span>])</span>
+<span id="cb11-138"><a href="#cb11-138" aria-hidden="true" tabindex="-1"></a>  onset_H <span class="ot">&lt;-</span> <span class="fu">diff</span>(out[, <span class="st">"cum_onset_H"</span>])</span>
+<span id="cb11-139"><a href="#cb11-139" aria-hidden="true" tabindex="-1"></a>  last    <span class="ot">&lt;-</span> <span class="fu">nrow</span>(out)</span>
+<span id="cb11-140"><a href="#cb11-140" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-141"><a href="#cb11-141" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span>full) {</span>
+<span id="cb11-142"><a href="#cb11-142" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">inc      =</span> onset_C <span class="sc">+</span> onset_H,</span>
+<span id="cb11-143"><a href="#cb11-143" aria-hidden="true" tabindex="-1"></a>                <span class="at">adm_pre  =</span> out[last, <span class="st">"cum_onset_H"</span>],</span>
+<span id="cb11-144"><a href="#cb11-144" aria-hidden="true" tabindex="-1"></a>                <span class="at">adm_post =</span> out[last, <span class="st">"cum_adm_post"</span>]))</span>
+<span id="cb11-145"><a href="#cb11-145" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb11-146"><a href="#cb11-146" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb11-147"><a href="#cb11-147" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(</span>
+<span id="cb11-148"><a href="#cb11-148" aria-hidden="true" tabindex="-1"></a>    <span class="at">week     =</span> <span class="fu">seq_len</span>(n_weeks),</span>
+<span id="cb11-149"><a href="#cb11-149" aria-hidden="true" tabindex="-1"></a>    <span class="at">onset_C  =</span> onset_C,</span>
+<span id="cb11-150"><a href="#cb11-150" aria-hidden="true" tabindex="-1"></a>    <span class="at">onset_H  =</span> onset_H,</span>
+<span id="cb11-151"><a href="#cb11-151" aria-hidden="true" tabindex="-1"></a>    <span class="at">adm_pre  =</span> onset_H,</span>
+<span id="cb11-152"><a href="#cb11-152" aria-hidden="true" tabindex="-1"></a>    <span class="at">adm_post =</span> <span class="fu">diff</span>(out[, <span class="st">"cum_adm_post"</span>]),</span>
+<span id="cb11-153"><a href="#cb11-153" aria-hidden="true" tabindex="-1"></a>    <span class="at">noso     =</span> <span class="fu">diff</span>(out[, <span class="st">"cum_noso"</span>]),</span>
+<span id="cb11-154"><a href="#cb11-154" aria-hidden="true" tabindex="-1"></a>    <span class="at">inf_C    =</span> <span class="fu">diff</span>(out[, <span class="st">"cum_inf_C"</span>]),</span>
+<span id="cb11-155"><a href="#cb11-155" aria-hidden="true" tabindex="-1"></a>    <span class="at">I_H_pre  =</span> out[<span class="sc">-</span><span class="dv">1</span>, <span class="st">"I_H_pre"</span>],</span>
+<span id="cb11-156"><a href="#cb11-156" aria-hidden="true" tabindex="-1"></a>    <span class="at">I_H_post =</span> out[<span class="sc">-</span><span class="dv">1</span>, <span class="st">"I_H_post"</span>],</span>
+<span id="cb11-157"><a href="#cb11-157" aria-hidden="true" tabindex="-1"></a>    <span class="at">N_H      =</span> <span class="fu">rowSums</span>(out[<span class="sc">-</span><span class="dv">1</span>, <span class="fu">c</span>(<span class="st">"S_H"</span>, <span class="st">"E_H"</span>, <span class="st">"I_H_pre"</span>,</span>
+<span id="cb11-158"><a href="#cb11-158" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">"I_H_post"</span>, <span class="st">"Q"</span>, <span class="st">"R_H"</span>)]),</span>
+<span id="cb11-159"><a href="#cb11-159" aria-hidden="true" tabindex="-1"></a>    <span class="at">s_H_t    =</span> out[<span class="sc">-</span><span class="dv">1</span>, <span class="st">"S_H"</span>] <span class="sc">/</span> <span class="fu">rowSums</span>(out[<span class="sc">-</span><span class="dv">1</span>, <span class="fu">c</span>(<span class="st">"S_H"</span>, <span class="st">"E_H"</span>, <span class="st">"I_H_pre"</span>,</span>
+<span id="cb11-160"><a href="#cb11-160" aria-hidden="true" tabindex="-1"></a>                                                  <span class="st">"I_H_post"</span>, <span class="st">"R_H"</span>)]),</span>
+<span id="cb11-161"><a href="#cb11-161" aria-hidden="true" tabindex="-1"></a>    <span class="at">s_C_t    =</span> out[<span class="sc">-</span><span class="dv">1</span>, <span class="st">"S_C"</span>] <span class="sc">/</span> <span class="fu">rowSums</span>(out[<span class="sc">-</span><span class="dv">1</span>, <span class="fu">c</span>(<span class="st">"S_C"</span>, <span class="st">"E_C"</span>, <span class="st">"I_C_pre"</span>,</span>
+<span id="cb11-162"><a href="#cb11-162" aria-hidden="true" tabindex="-1"></a>                                                  <span class="st">"I_C_post"</span>, <span class="st">"R_C"</span>)])</span>
+<span id="cb11-163"><a href="#cb11-163" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb11-164"><a href="#cb11-164" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="parameters" class="level2">
+<h2 class="anchored" data-anchor-id="parameters">Parameters</h2>
+<p>Disease natural history (rate per day)</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>sigma <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> <span class="dv">8</span>      <span class="co"># exposed -&gt; infectious</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>eta   <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> <span class="dv">4</span>      <span class="co"># pre-rash -&gt; post-rash</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>gamma <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> <span class="dv">4</span>      <span class="co"># post-rash -&gt; removed</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>theta_fixed <span class="ot">&lt;-</span> <span class="dv">1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="alpha_bar" class="level3">
+<h3 class="anchored" data-anchor-id="alpha_bar">alpha_bar</h3>
+<p>Number of children &lt;= 15 year-old in HCMC (<span class="math inline">\(N\)</span>):</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>N <span class="ot">&lt;-</span> df_census <span class="sc">|&gt;</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(age <span class="sc">&lt;=</span> <span class="dv">15</span>) <span class="sc">|&gt;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(n) <span class="sc">|&gt;</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span>()</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Total population N:"</span>, N)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total population N: 1388365</code></pre>
+</div>
+</div>
+<p>Children’s Hospital 1 reported 90,000 admissions per year. Assume that the total HCMC is 5 times CH1, but only 40% serve HCMC residents.</p>
+<p>The mean length of stay of a child is reported as 5.2 days.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>resident_frac <span class="ot">&lt;-</span> <span class="fl">0.4</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>alpha_bar <span class="ot">&lt;-</span> <span class="dv">5</span> <span class="sc">*</span> resident_frac <span class="sc">*</span> <span class="dv">90000</span> <span class="sc">/</span> (N <span class="sc">*</span> <span class="dv">365</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>delta <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> <span class="fl">5.2</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Number of inpatients in the hospital</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>N_H0 <span class="ot">&lt;-</span> <span class="fu">round</span>(alpha_bar <span class="sc">*</span> N <span class="sc">/</span> (delta <span class="sc">+</span> alpha_bar))</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>N_C0 <span class="ot">&lt;-</span> N <span class="sc">-</span> N_H0</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Hospital population N_H0:"</span>, N_H0)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Hospital population N_H0: 2560</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Community population N_C0:"</span>, N_C0)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Community population N_C0: 1385805</code></pre>
+</div>
+</div>
+</section>
+<section id="alpha_m" class="level3">
+<h3 class="anchored" data-anchor-id="alpha_m">alpha_M</h3>
+<p>Estimate onset to admission delay. Only Ha Noi data has this:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>d <span class="ot">&lt;-</span> df_hn <span class="sc">|&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">ad_delay =</span> <span class="fu">as.numeric</span>(admission_date <span class="sc">-</span> onset_date)) <span class="sc">|&gt;</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(ad_delay), ad_delay <span class="sc">&gt;=</span> <span class="dv">0</span>, ad_delay <span class="sc">&lt;=</span> <span class="dv">10</span>, source_province <span class="sc">==</span> <span class="st">"community"</span>, province <span class="sc">==</span> <span class="st">"Ha Noi"</span>)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>est <span class="ot">&lt;-</span> d <span class="sc">|&gt;</span> <span class="fu">summarise</span>(</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">n =</span> <span class="fu">n</span>(),</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">addelay_M =</span> <span class="fu">mean</span>(ad_delay),</span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">median =</span> <span class="fu">median</span>(ad_delay),</span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">sd =</span> <span class="fu">sd</span>(ad_delay),</span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">se =</span> <span class="fu">sd</span>(ad_delay) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>())</span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>est</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>    n addelay_M median       sd         se
+1 399  2.142857      2 1.590532 0.07962619</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_interval</span>(d, ad_delay, <span class="at">trim =</span> <span class="fl">0.99</span>, <span class="at">xlab =</span> <span class="st">"onset to admission delay (days)"</span>, <span class="at">ylab =</span> <span class="st">"cases"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03_res3_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>alpha_M <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">/</span>est<span class="sc">$</span>addelay_M</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"alpha_M:"</span>, alpha_M)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>alpha_M: 0.4666667</code></pre>
+</div>
+</div>
+</section>
+<section id="delta_m" class="level3">
+<h3 class="anchored" data-anchor-id="delta_m">delta_M</h3>
+<p>Measles-driven admission rate is estimated from the length of stay of measles patients.</p>
+<p>Children’s Hospital 2 (HCMC):</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>d <span class="ot">&lt;-</span> df_ch2 <span class="sc">|&gt;</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">stay =</span> <span class="fu">as.numeric</span>(discharge <span class="sc">-</span> admission)) <span class="sc">|&gt;</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(stay), stay <span class="sc">&gt;=</span> <span class="dv">0</span>, stay <span class="sc">&lt;</span> <span class="dv">30</span>)</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>est <span class="ot">&lt;-</span> d <span class="sc">|&gt;</span> <span class="fu">summarise</span>(</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">n =</span> <span class="fu">n</span>(),</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">los_M =</span> <span class="fu">mean</span>(stay),</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">median =</span> <span class="fu">median</span>(stay),</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">sd =</span> <span class="fu">sd</span>(stay),</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">se =</span> <span class="fu">sd</span>(stay) <span class="sc">/</span> <span class="fu">sqrt</span>(<span class="fu">n</span>())</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>est</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     n    los_M median       sd         se
+1 3353 5.787056      5 4.978772 0.08598159</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_interval</span>(d, stay, <span class="at">xlab =</span> <span class="st">"length of stay (days)"</span>, <span class="at">ylab =</span> <span class="st">"cases"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03_res3_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>delta_M <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> est<span class="sc">$</span>los_M</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="disease-free-equilibrium-check" class="level2">
+<h2 class="anchored" data-anchor-id="disease-free-equilibrium-check">Disease-free equilibrium check</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>disease_free <span class="ot">&lt;-</span> <span class="cf">function</span>(delta_use, <span class="at">s_C0 =</span> <span class="fl">0.08</span>, <span class="at">s_H0 =</span> <span class="fl">0.293</span>, <span class="at">days =</span> <span class="dv">365</span>) {</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  par <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">R_eff =</span> <span class="fl">1.3</span>, <span class="at">kappa =</span> <span class="dv">0</span>, <span class="at">theta =</span> <span class="dv">1</span>,</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>           <span class="at">s_C0 =</span> s_C0, <span class="at">s_H0 =</span> s_H0, <span class="at">seed =</span> <span class="dv">0</span>)</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  d   <span class="ot">&lt;-</span> <span class="fu">derived</span>(par)</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">make_params</span>(par, d)</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>  p[[<span class="st">"beta"</span>]]  <span class="ot">&lt;-</span> <span class="dv">0</span>            <span class="co"># no transmission</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>  p[[<span class="st">"delta"</span>]] <span class="ot">&lt;-</span> delta_use</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>  out <span class="ot">&lt;-</span> <span class="fu">ode</span>(<span class="at">y =</span> <span class="fu">init_state</span>(s_C0, s_H0, <span class="dv">0</span>), <span class="at">times =</span> <span class="dv">0</span><span class="sc">:</span>days,</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>             <span class="at">func =</span> measles_ode, <span class="at">parms =</span> p,</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>             <span class="at">method =</span> <span class="st">"lsoda"</span>, <span class="at">atol =</span> <span class="fl">1e-3</span>, <span class="at">rtol =</span> <span class="fl">1e-6</span>)</span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>(out) <span class="sc">|&gt;</span></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as_tibble</span>() <span class="sc">|&gt;</span></span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">transmute</span>(</span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">day =</span> time,</span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>      <span class="at">N_H =</span> S_H <span class="sc">+</span> E_H <span class="sc">+</span> I_H_pre <span class="sc">+</span> I_H_post <span class="sc">+</span> Q <span class="sc">+</span> R_H,</span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>      <span class="at">s_H =</span> S_H <span class="sc">/</span> (S_H <span class="sc">+</span> E_H <span class="sc">+</span> I_H_pre <span class="sc">+</span> I_H_post <span class="sc">+</span> R_H),</span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>      <span class="at">s_C =</span> S_C <span class="sc">/</span> (S_C <span class="sc">+</span> E_C <span class="sc">+</span> I_C_pre <span class="sc">+</span> I_C_post <span class="sc">+</span> R_C)</span>
+<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb29-24"><a href="#cb29-24" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb29-25"><a href="#cb29-25" aria-hidden="true" tabindex="-1"></a><span class="fu">bind_rows</span>(</span>
+<span id="cb29-26"><a href="#cb29-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">disease_free</span>(delta)) <span class="sc">|&gt;</span> </span>
+<span id="cb29-27"><a href="#cb29-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(day, N_H)) <span class="sc">+</span></span>
+<span id="cb29-28"><a href="#cb29-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> N_H0, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb29-29"><a href="#cb29-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb29-30"><a href="#cb29-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ylim</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">3000</span>)) <span class="sc">+</span></span>
+<span id="cb29-31"><a href="#cb29-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Day"</span>, <span class="at">y =</span> <span class="st">"Hospital population N_H"</span>, <span class="at">colour =</span> <span class="cn">NULL</span>,</span>
+<span id="cb29-32"><a href="#cb29-32" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Dashed line is the specified N_H(0)"</span>) <span class="sc">+</span></span>
+<span id="cb29-33"><a href="#cb29-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
+<span id="cb29-34"><a href="#cb29-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03_res3_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="calibration" class="level2">
+<h2 class="anchored" data-anchor-id="calibration">Calibration</h2>
+<p>Epidemic curve by inpatient/outpatient:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>df_week <span class="ot">&lt;-</span> df_hcmc <span class="sc">|&gt;</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(age <span class="sc">&lt;=</span> <span class="dv">15</span>) <span class="sc">|&gt;</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">date =</span> <span class="fu">as_date</span>(ngay_nv),</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">week =</span> <span class="fu">floor_date</span>(date, <span class="st">"week"</span>, <span class="at">week_start =</span> <span class="dv">1</span>),</span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">type =</span> <span class="fu">if_else</span>(inpatient, <span class="st">"inpatient"</span>, <span class="st">"outpatient"</span>)</span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(week), <span class="sc">!</span><span class="fu">is.na</span>(type)) <span class="sc">|&gt;</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(week, type, <span class="at">name =</span> <span class="st">"cases"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">complete</span>(</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">week =</span> <span class="fu">seq</span>(<span class="fu">min</span>(week), <span class="fu">max</span>(week), <span class="at">by =</span> <span class="st">"week"</span>),</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>    type,</span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="fu">list</span>(<span class="at">cases =</span> <span class="dv">0</span>)</span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>df_week_wide <span class="ot">&lt;-</span> df_week <span class="sc">|&gt;</span></span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> type, <span class="at">values_from =</span> cases, <span class="at">values_fill =</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">total          =</span> inpatient <span class="sc">+</span> outpatient,</span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">prop_inpatient =</span> inpatient <span class="sc">/</span> total</span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(week)</span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>n_lead_weeks <span class="ot">&lt;-</span> <span class="dv">8</span>      <span class="co"># simulated weeks before the first observed week</span></span>
+<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a>obs <span class="ot">&lt;-</span> df_week_wide <span class="sc">|&gt;</span></span>
+<span id="cb30-27"><a href="#cb30-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(week) <span class="sc">|&gt;</span></span>
+<span id="cb30-28"><a href="#cb30-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">t_week =</span> <span class="fu">row_number</span>() <span class="sc">+</span> n_lead_weeks)</span>
+<span id="cb30-29"><a href="#cb30-29" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb30-30"><a href="#cb30-30" aria-hidden="true" tabindex="-1"></a>n_weeks   <span class="ot">&lt;-</span> <span class="fu">max</span>(obs<span class="sc">$</span>t_week)</span>
+<span id="cb30-31"><a href="#cb30-31" aria-hidden="true" tabindex="-1"></a>obs_total <span class="ot">&lt;-</span> obs<span class="sc">$</span>total</span>
+<span id="cb30-32"><a href="#cb30-32" aria-hidden="true" tabindex="-1"></a>obs_idx   <span class="ot">&lt;-</span> obs<span class="sc">$</span>t_week</span>
+<span id="cb30-33"><a href="#cb30-33" aria-hidden="true" tabindex="-1"></a>t0_date   <span class="ot">&lt;-</span> <span class="fu">min</span>(obs<span class="sc">$</span>week) <span class="sc">-</span> <span class="dv">7</span> <span class="sc">*</span> (n_lead_weeks <span class="sc">+</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Likelihood</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>par_names <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"R_eff"</span>, <span class="st">"kappa"</span>,</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>               <span class="st">"s_C0"</span>, <span class="st">"s_H0"</span>, <span class="st">"seed"</span>, <span class="st">"rho"</span>, <span class="st">"phi"</span>)</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>loglik <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>  par <span class="ot">&lt;-</span> <span class="fu">setNames</span>(<span class="fu">as.numeric</span>(x), par_names)</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>  sim <span class="ot">&lt;-</span> <span class="fu">run_model</span>(par, n_weeks)</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(sim)) <span class="fu">return</span>(<span class="sc">-</span><span class="cn">Inf</span>)</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>  <span class="do">## weekly cases, negative binomial</span></span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>  mu <span class="ot">&lt;-</span> par[[<span class="st">"rho"</span>]] <span class="sc">*</span> sim<span class="sc">$</span>inc[obs_idx] <span class="sc">+</span> <span class="fl">0.5</span></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>  ll <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">dnbinom</span>(obs_total, <span class="at">mu =</span> mu, <span class="at">size =</span> par[[<span class="st">"phi"</span>]], <span class="at">log =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>  <span class="do">## ------------------------------------------------------------------------</span></span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>  <span class="do">## Serial residual seroprevalence, once df_sero is assembled. This is what</span></span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>  <span class="do">## would identify kappa from data rather than from total epidemic size.</span></span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a>  <span class="do">## ------------------------------------------------------------------------</span></span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.finite</span>(ll)) ll <span class="cf">else</span> <span class="sc">-</span><span class="cn">Inf</span></span>
+<span id="cb31-20"><a href="#cb31-20" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="prior" class="level3">
+<h3 class="anchored" data-anchor-id="prior">Prior</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>lower <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">R_eff =</span> <span class="fl">1.05</span>, <span class="at">kappa =</span> <span class="dv">0</span>,</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>           <span class="at">s_C0 =</span> <span class="fl">0.01</span>, <span class="at">s_H0 =</span> <span class="fl">0.05</span>, <span class="at">seed =</span> <span class="dv">1</span>, <span class="at">rho =</span> <span class="fl">0.001</span>, <span class="at">phi =</span> <span class="fl">0.1</span>)</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>upper <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">R_eff =</span> <span class="dv">5</span>,    <span class="at">kappa =</span> <span class="dv">20</span>,</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>           <span class="at">s_C0 =</span> <span class="fl">0.40</span>, <span class="at">s_H0 =</span> <span class="fl">0.70</span>, <span class="at">seed =</span> <span class="dv">50</span>, <span class="at">rho =</span> <span class="dv">1</span>, <span class="at">phi =</span> <span class="dv">100</span>)</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>n_C_eff <span class="ot">&lt;-</span> <span class="dv">200</span>    <span class="co"># effective n for s_C0: registry completeness, not registry size</span></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>n_H_eff <span class="ot">&lt;-</span> <span class="dv">75</span>    <span class="co"># effective n for s_H0: number of residual sera</span></span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>log_prior <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>  par <span class="ot">&lt;-</span> <span class="fu">setNames</span>(<span class="fu">as.numeric</span>(x), par_names)</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">dunif</span>(par[[<span class="st">"R_eff"</span>]], <span class="fl">1.05</span>, <span class="dv">5</span>, <span class="at">log =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">dunif</span>(par[[<span class="st">"kappa"</span>]], <span class="dv">0</span>, <span class="dv">20</span>, <span class="at">log =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">dbeta</span>(par[[<span class="st">"s_C0"</span>]], <span class="fl">0.080</span> <span class="sc">*</span> n_C_eff, <span class="fl">0.920</span> <span class="sc">*</span> n_C_eff, <span class="at">log =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">dbeta</span>(par[[<span class="st">"s_H0"</span>]], <span class="fl">0.293</span> <span class="sc">*</span> n_H_eff, <span class="fl">0.707</span> <span class="sc">*</span> n_H_eff, <span class="at">log =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">dunif</span>(par[[<span class="st">"seed"</span>]], <span class="dv">1</span>, <span class="dv">50</span>, <span class="at">log =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">dbeta</span>(par[[<span class="st">"rho"</span>]], <span class="dv">2</span>, <span class="dv">8</span>, <span class="at">log =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">dunif</span>(par[[<span class="st">"phi"</span>]], <span class="fl">0.1</span>, <span class="dv">100</span>, <span class="at">log =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>prior_sampler <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">n =</span> <span class="dv">1</span>) {</span>
+<span id="cb32-23"><a href="#cb32-23" aria-hidden="true" tabindex="-1"></a>  m <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">runif</span>(n <span class="sc">*</span> <span class="fu">length</span>(lower)), <span class="at">nrow =</span> n, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb32-24"><a href="#cb32-24" aria-hidden="true" tabindex="-1"></a>  m <span class="ot">&lt;-</span> <span class="fu">sweep</span>(m, <span class="dv">2</span>, upper <span class="sc">-</span> lower, <span class="st">"*"</span>)</span>
+<span id="cb32-25"><a href="#cb32-25" aria-hidden="true" tabindex="-1"></a>  m <span class="ot">&lt;-</span> <span class="fu">sweep</span>(m, <span class="dv">2</span>, lower, <span class="st">"+"</span>)</span>
+<span id="cb32-26"><a href="#cb32-26" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (n <span class="sc">==</span> <span class="dv">1</span>) <span class="fu">as.numeric</span>(m) <span class="cf">else</span> m</span>
+<span id="cb32-27"><a href="#cb32-27" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb32-28"><a href="#cb32-28" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb32-29"><a href="#cb32-29" aria-hidden="true" tabindex="-1"></a>prior <span class="ot">&lt;-</span> <span class="fu">createPrior</span>(<span class="at">density =</span> log_prior, <span class="at">sampler =</span> prior_sampler,</span>
+<span id="cb32-30"><a href="#cb32-30" aria-hidden="true" tabindex="-1"></a>                     <span class="at">lower =</span> lower, <span class="at">upper =</span> upper)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="test" class="level3">
+<h3 class="anchored" data-anchor-id="test">Test</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>r_obs <span class="ot">&lt;-</span> <span class="fl">0.0224</span>      <span class="co"># refit over your actual growth phase</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>D_0     <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> eta <span class="sc">+</span> <span class="dv">1</span> <span class="sc">/</span> (gamma <span class="sc">+</span> alpha_M)</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>nu      <span class="ot">&lt;-</span> gamma <span class="sc">+</span> alpha_M</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>R_eff_0 <span class="ot">&lt;-</span> (r_obs <span class="sc">+</span> sigma) <span class="sc">*</span> (r_obs <span class="sc">+</span> eta) <span class="sc">*</span> (r_obs <span class="sc">+</span> nu) <span class="sc">*</span> D_0 <span class="sc">/</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>           (sigma <span class="sc">*</span> (r_obs <span class="sc">+</span> nu <span class="sc">+</span> eta))</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>p_start <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">R_eff =</span> R_eff_0, <span class="at">kappa =</span> <span class="fl">0.5</span>,</span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>             <span class="at">s_C0 =</span> <span class="fl">0.080</span>, <span class="at">s_H0 =</span> <span class="fl">0.293</span>, <span class="at">seed =</span> <span class="dv">25</span>, <span class="at">rho =</span> <span class="fl">0.18</span>, <span class="at">phi =</span> <span class="dv">20</span>)</span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"R_eff start"</span>, <span class="fu">round</span>(R_eff_0, <span class="dv">3</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>R_eff start 1.295 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="do">## seed only shifts the curve in time, so scale it once on the early weeks</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>sim <span class="ot">&lt;-</span> <span class="fu">run_model</span>(p_start, n_weeks)</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>p_start[<span class="st">"seed"</span>] <span class="ot">&lt;-</span> <span class="fu">min</span>(</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  p_start[<span class="st">"seed"</span>] <span class="sc">*</span> <span class="fu">sum</span>(obs_total[<span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>]) <span class="sc">/</span></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">sum</span>(p_start[[<span class="st">"rho"</span>]] <span class="sc">*</span> sim<span class="sc">$</span>inc[obs_idx[<span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>]]),</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="dv">49</span>)</span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a><span class="fu">loglik</span>(p_start)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] -643.8071</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">replicate</span>(<span class="dv">100</span>, <span class="fu">loglik</span>(p_start)))   <span class="co"># seconds per 100 evaluations</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   user  system elapsed 
+   0.75    0.00    0.76 </code></pre>
+</div>
+</div>
+</section>
+<section id="fit" class="level3">
+<h3 class="anchored" data-anchor-id="fit">Fit</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># n_chains &lt;- 6</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="co"># n_par    &lt;- min(n_chains, parallel::detectCores() - 1)</span></span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a><span class="co"># start &lt;- t(replicate(n_chains,</span></span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a><span class="co">#                      pmin(pmax(p_start[par_names] * runif(7, 0.7, 1.4),</span></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a><span class="co">#                                lower + 1e-6), upper)))</span></span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a><span class="co"># apply(start, 1, loglik)      # all six must be finite before you run</span></span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a><span class="co"># setup &lt;- createBayesianSetup(</span></span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a><span class="co">#   likelihood = loglik,</span></span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a><span class="co">#   prior      = prior,</span></span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a><span class="co">#   names      = par_names,</span></span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a><span class="co">#   parallel   = n_par,</span></span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a><span class="co">#   parallelOptions = list(variables = "all",</span></span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a><span class="co">#                          packages  = c("deSolve", "stats", "tibble"),</span></span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a><span class="co">#                          dlls      = NULL)</span></span>
+<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span>
+<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb39-19"><a href="#cb39-19" aria-hidden="true" tabindex="-1"></a><span class="co"># setup$likelihood$density(start)   # confirm the workers can evaluate</span></span>
+<span id="cb39-20"><a href="#cb39-20" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb39-21"><a href="#cb39-21" aria-hidden="true" tabindex="-1"></a><span class="co"># t_par &lt;- system.time(</span></span>
+<span id="cb39-22"><a href="#cb39-22" aria-hidden="true" tabindex="-1"></a><span class="co">#   fit &lt;- runMCMC(setup, "DEzs",</span></span>
+<span id="cb39-23"><a href="#cb39-23" aria-hidden="true" tabindex="-1"></a><span class="co">#                  settings = list(iterations = 3e5, burnin = 1e5,</span></span>
+<span id="cb39-24"><a href="#cb39-24" aria-hidden="true" tabindex="-1"></a><span class="co">#                                  startValue = start, f = 1.5, message = TRUE))</span></span>
+<span id="cb39-25"><a href="#cb39-25" aria-hidden="true" tabindex="-1"></a><span class="co"># )</span></span>
+<span id="cb39-26"><a href="#cb39-26" aria-hidden="true" tabindex="-1"></a><span class="co"># t_par</span></span>
+<span id="cb39-27"><a href="#cb39-27" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb39-28"><a href="#cb39-28" aria-hidden="true" tabindex="-1"></a><span class="co"># gelmanDiagnostics(fit, plot = FALSE)   # psrf under about 1.02</span></span>
+<span id="cb39-29"><a href="#cb39-29" aria-hidden="true" tabindex="-1"></a><span class="co"># summary(fit)                           # rejection rate near 0.75 to 0.90</span></span>
+<span id="cb39-30"><a href="#cb39-30" aria-hidden="true" tabindex="-1"></a><span class="co"># correlationPlot(fit)</span></span>
+<span id="cb39-31"><a href="#cb39-31" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb39-32"><a href="#cb39-32" aria-hidden="true" tabindex="-1"></a><span class="co"># stopParallel(setup)</span></span>
+<span id="cb39-33"><a href="#cb39-33" aria-hidden="true" tabindex="-1"></a><span class="co"># saveRDS(fit, "measles_fit.rds")</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>It fit quite well, other parameters make sense except kappa is too small while I expect it should be &gt; 1.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"measles_fit.rds"</span>)</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># # # # # # # # # # # # # # # # # # # # # # # # # 
+## MCMC chain summary ## 
+# # # # # # # # # # # # # # # # # # # # # # # # # 
+ 
+# MCMC sampler:  DEzs 
+# Nr. Chains:  6 
+# Iterations per chain:  33335 
+# Rejection rate:  0.803 
+# Effective sample size:  2690 
+# Runtime:  1899.65  sec. 
+ 
+# Parameters
+        psf    MAP   2.5% median  97.5%
+R_eff 1.005  1.274  1.201  1.261  1.299
+kappa 1.014  0.073  0.007  0.121  0.352
+s_C0  1.004  0.075  0.055  0.081  0.115
+s_H0  1.004  0.281  0.196  0.283  0.381
+seed  1.004 25.641 17.555 27.130 40.892
+rho   1.006  0.159  0.103  0.147  0.214
+phi   1.005 25.975 13.530 23.276 38.530
+
+## DIC:  648.996 
+## Convergence 
+ Gelman Rubin multivariate psrf:   
+ </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">correlationPlot</span>(fit)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03_res3_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Prediction vs observation</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>post <span class="ot">&lt;-</span> <span class="fu">getSample</span>(fit, <span class="at">start =</span> <span class="dv">2500</span>, <span class="at">thin =</span> <span class="dv">20</span>) <span class="sc">|&gt;</span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>() <span class="sc">|&gt;</span></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(par_names) <span class="sc">|&gt;</span></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">|&gt;</span></span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">xi       =</span> s_H0 <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> s_C0) <span class="sc">/</span> (s_C0 <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> s_H0)),</span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha    =</span> alpha_bar <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> s_C0 <span class="sc">*</span> (xi <span class="sc">-</span> <span class="dv">1</span>)),</span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">xi_alpha =</span> xi <span class="sc">*</span> alpha,</span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">D_inf    =</span> <span class="dv">1</span> <span class="sc">/</span> (eta <span class="sc">+</span> xi_alpha) <span class="sc">+</span> <span class="dv">1</span> <span class="sc">/</span> (gamma <span class="sc">+</span> alpha_M),</span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">beta     =</span> R_eff <span class="sc">/</span> (D_inf <span class="sc">*</span> s_C0),</span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">R0       =</span> beta <span class="sc">*</span> D_inf</span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a>post <span class="sc">|&gt;</span></span>
+<span id="cb43-15"><a href="#cb43-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(</span>
+<span id="cb43-16"><a href="#cb43-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(R_eff, beta, R0, kappa,</span>
+<span id="cb43-17"><a href="#cb43-17" aria-hidden="true" tabindex="-1"></a>      s_C0, s_H0, rho, xi, seed, phi),</span>
+<span id="cb43-18"><a href="#cb43-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">list</span>(<span class="at">med =</span> <span class="sc">~</span> <span class="fu">median</span>(.x),</span>
+<span id="cb43-19"><a href="#cb43-19" aria-hidden="true" tabindex="-1"></a>         <span class="at">lo  =</span> <span class="sc">~</span> <span class="fu">quantile</span>(.x, <span class="fl">0.025</span>),</span>
+<span id="cb43-20"><a href="#cb43-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">hi  =</span> <span class="sc">~</span> <span class="fu">quantile</span>(.x, <span class="fl">0.975</span>))</span>
+<span id="cb43-21"><a href="#cb43-21" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">|&gt;</span></span>
+<span id="cb43-22"><a href="#cb43-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="fu">everything</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb43-23"><a href="#cb43-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">separate</span>(name, <span class="fu">c</span>(<span class="st">"par"</span>, <span class="st">"stat"</span>), <span class="at">sep =</span> <span class="st">"_(?=[^_]+$)"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb43-24"><a href="#cb43-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> stat, <span class="at">values_from =</span> value) <span class="sc">|&gt;</span></span>
+<span id="cb43-25"><a href="#cb43-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(<span class="at">n =</span> <span class="cn">Inf</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 4
+   par       med       lo     hi
+   &lt;chr&gt;   &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;
+ 1 R_eff  1.26    1.20     1.30 
+ 2 beta   2.89    2.05     4.23 
+ 3 R0    15.5    11.0     22.7  
+ 4 kappa  0.120   0.00697  0.351
+ 5 s_C0   0.0809  0.0552   0.114
+ 6 s_H0   0.283   0.197    0.381
+ 7 rho    0.147   0.103    0.214
+ 8 xi     4.51    2.47     8.01 
+ 9 seed  27.2    17.5     41.0  
+10 phi   23.3    13.6     38.4  </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>pp <span class="ot">&lt;-</span> post <span class="sc">|&gt;</span></span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_sample</span>(<span class="at">n =</span> <span class="dv">500</span>) <span class="sc">|&gt;</span></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">draw =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_split</span>(draw) <span class="sc">|&gt;</span></span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_dfr</span>(<span class="cf">function</span>(d) {</span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>    par <span class="ot">&lt;-</span> <span class="fu">setNames</span>(<span class="fu">as.numeric</span>(d[par_names]), par_names)</span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a>    s <span class="ot">&lt;-</span> <span class="fu">run_model</span>(par, n_weeks, <span class="at">full =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">is.null</span>(s)) <span class="fu">return</span>(<span class="cn">NULL</span>)</span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tibble</span>(</span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">draw =</span> d<span class="sc">$</span>draw,</span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">week =</span> s<span class="sc">$</span>week,</span>
+<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">mu   =</span> d<span class="sc">$</span>rho <span class="sc">*</span> (s<span class="sc">$</span>onset_C <span class="sc">+</span> s<span class="sc">$</span>onset_H),</span>
+<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">noso =</span> s<span class="sc">$</span>noso</span>
+<span id="cb45-14"><a href="#cb45-14" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb45-15"><a href="#cb45-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">y_rep =</span> <span class="fu">rnbinom</span>(<span class="fu">n</span>(), <span class="at">mu =</span> mu <span class="sc">+</span> <span class="fl">0.5</span>, <span class="at">size =</span> d<span class="sc">$</span>phi))</span>
+<span id="cb45-16"><a href="#cb45-16" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb45-17"><a href="#cb45-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-18"><a href="#cb45-18" aria-hidden="true" tabindex="-1"></a><span class="co"># model week -&gt; calendar date, so the figure is readable in the thesis</span></span>
+<span id="cb45-19"><a href="#cb45-19" aria-hidden="true" tabindex="-1"></a>wk2date <span class="ot">&lt;-</span> <span class="cf">function</span>(w) t0_date <span class="sc">+</span> <span class="dv">7</span> <span class="sc">*</span> w</span>
+<span id="cb45-20"><a href="#cb45-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-21"><a href="#cb45-21" aria-hidden="true" tabindex="-1"></a><span class="co"># -----------------------------------------------------------------------------</span></span>
+<span id="cb45-22"><a href="#cb45-22" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Main figure: total weekly cases</span></span>
+<span id="cb45-23"><a href="#cb45-23" aria-hidden="true" tabindex="-1"></a><span class="co"># -----------------------------------------------------------------------------</span></span>
+<span id="cb45-24"><a href="#cb45-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-25"><a href="#cb45-25" aria-hidden="true" tabindex="-1"></a>band <span class="ot">&lt;-</span> pp <span class="sc">|&gt;</span></span>
+<span id="cb45-26"><a href="#cb45-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(week) <span class="sc">|&gt;</span></span>
+<span id="cb45-27"><a href="#cb45-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb45-28"><a href="#cb45-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">med    =</span> <span class="fu">median</span>(mu),</span>
+<span id="cb45-29"><a href="#cb45-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">lo95   =</span> <span class="fu">quantile</span>(y_rep, <span class="fl">0.025</span>),</span>
+<span id="cb45-30"><a href="#cb45-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">hi95   =</span> <span class="fu">quantile</span>(y_rep, <span class="fl">0.975</span>),</span>
+<span id="cb45-31"><a href="#cb45-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">lo50   =</span> <span class="fu">quantile</span>(y_rep, <span class="fl">0.25</span>),</span>
+<span id="cb45-32"><a href="#cb45-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">hi50   =</span> <span class="fu">quantile</span>(y_rep, <span class="fl">0.75</span>),</span>
+<span id="cb45-33"><a href="#cb45-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb45-34"><a href="#cb45-34" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb45-35"><a href="#cb45-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">date =</span> <span class="fu">wk2date</span>(week))</span>
+<span id="cb45-36"><a href="#cb45-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-37"><a href="#cb45-37" aria-hidden="true" tabindex="-1"></a>obs_d <span class="ot">&lt;-</span> obs <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">date =</span> <span class="fu">wk2date</span>(t_week))</span>
+<span id="cb45-38"><a href="#cb45-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-39"><a href="#cb45-39" aria-hidden="true" tabindex="-1"></a>p_main <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(band, <span class="fu">aes</span>(date)) <span class="sc">+</span></span>
+<span id="cb45-40"><a href="#cb45-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lo95, <span class="at">ymax =</span> hi95), <span class="at">fill =</span> <span class="st">"grey80"</span>) <span class="sc">+</span></span>
+<span id="cb45-41"><a href="#cb45-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lo50, <span class="at">ymax =</span> hi50), <span class="at">fill =</span> <span class="st">"grey60"</span>) <span class="sc">+</span></span>
+<span id="cb45-42"><a href="#cb45-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> med), <span class="at">linewidth =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb45-43"><a href="#cb45-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data =</span> obs_d, <span class="fu">aes</span>(date, total), <span class="at">size =</span> <span class="fl">1.1</span>) <span class="sc">+</span></span>
+<span id="cb45-44"><a href="#cb45-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_breaks =</span> <span class="st">"3 months"</span>, <span class="at">date_labels =</span> <span class="st">"%b %Y"</span>) <span class="sc">+</span></span>
+<span id="cb45-45"><a href="#cb45-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"Weekly measles cases"</span>) <span class="sc">+</span></span>
+<span id="cb45-46"><a href="#cb45-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>(<span class="at">base_size =</span> <span class="dv">11</span>)</span>
+<span id="cb45-47"><a href="#cb45-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-48"><a href="#cb45-48" aria-hidden="true" tabindex="-1"></a>p_main</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03_res3_files/figure-html/unnamed-chunk-25-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>run_foi <span class="ot">&lt;-</span> <span class="cf">function</span>(par, n_weeks) {</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  out <span class="ot">&lt;-</span> <span class="fu">solve_model</span>(par, <span class="fu">seq</span>(<span class="dv">0</span>, n_weeks <span class="sc">*</span> <span class="dv">7</span>, <span class="at">by =</span> <span class="dv">1</span>))</span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(out)) <span class="fu">return</span>(<span class="cn">NULL</span>)</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>  d <span class="ot">&lt;-</span> <span class="fu">derived</span>(par)</span>
+<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb46-8"><a href="#cb46-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>(out) <span class="sc">|&gt;</span></span>
+<span id="cb46-9"><a href="#cb46-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as_tibble</span>() <span class="sc">|&gt;</span></span>
+<span id="cb46-10"><a href="#cb46-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">transmute</span>(</span>
+<span id="cb46-11"><a href="#cb46-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">date     =</span> t0_date <span class="sc">+</span> time,</span>
+<span id="cb46-12"><a href="#cb46-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">N_C      =</span> S_C <span class="sc">+</span> E_C <span class="sc">+</span> I_C_pre <span class="sc">+</span> I_C_post <span class="sc">+</span> R_C,</span>
+<span id="cb46-13"><a href="#cb46-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">N_H_mix  =</span> S_H <span class="sc">+</span> E_H <span class="sc">+</span> I_H_pre <span class="sc">+</span> I_H_post <span class="sc">+</span> R_H,</span>
+<span id="cb46-14"><a href="#cb46-14" aria-hidden="true" tabindex="-1"></a>      <span class="at">prev_C   =</span> (I_C_pre <span class="sc">+</span> I_C_post) <span class="sc">/</span> N_C,</span>
+<span id="cb46-15"><a href="#cb46-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">prev_H   =</span> (I_H_pre <span class="sc">+</span> I_H_post) <span class="sc">/</span> N_H_mix,</span>
+<span id="cb46-16"><a href="#cb46-16" aria-hidden="true" tabindex="-1"></a>      <span class="at">lambda_C =</span> d<span class="sc">$</span>beta <span class="sc">*</span> prev_C,</span>
+<span id="cb46-17"><a href="#cb46-17" aria-hidden="true" tabindex="-1"></a>      <span class="at">lambda_H =</span> par[[<span class="st">"kappa"</span>]] <span class="sc">*</span> d<span class="sc">$</span>beta <span class="sc">*</span> prev_H,</span>
+<span id="cb46-18"><a href="#cb46-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">ratio      =</span> <span class="fu">if_else</span>(prev_C <span class="sc">&gt;</span> <span class="fl">1e-9</span>, lambda_H <span class="sc">/</span> lambda_C, <span class="cn">NA_real_</span>),</span>
+<span id="cb46-19"><a href="#cb46-19" aria-hidden="true" tabindex="-1"></a>      <span class="at">prev_ratio =</span> <span class="fu">if_else</span>(prev_C <span class="sc">&gt;</span> <span class="fl">1e-9</span>, prev_H <span class="sc">/</span> prev_C, <span class="cn">NA_real_</span>)</span>
+<span id="cb46-20"><a href="#cb46-20" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span></span>
+<span id="cb46-21"><a href="#cb46-21" aria-hidden="true" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">select</span>(date, lambda_C, lambda_H, prev_C, prev_H, ratio, prev_ratio)</span>
+<span id="cb46-22"><a href="#cb46-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb46-23"><a href="#cb46-23" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb46-24"><a href="#cb46-24" aria-hidden="true" tabindex="-1"></a>foi <span class="ot">&lt;-</span> post <span class="sc">|&gt;</span></span>
+<span id="cb46-25"><a href="#cb46-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_sample</span>(<span class="at">n =</span> <span class="dv">200</span>) <span class="sc">|&gt;</span></span>
+<span id="cb46-26"><a href="#cb46-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">draw =</span> <span class="fu">row_number</span>()) <span class="sc">|&gt;</span></span>
+<span id="cb46-27"><a href="#cb46-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_split</span>(draw) <span class="sc">|&gt;</span></span>
+<span id="cb46-28"><a href="#cb46-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_dfr</span>(<span class="cf">function</span>(dd) {</span>
+<span id="cb46-29"><a href="#cb46-29" aria-hidden="true" tabindex="-1"></a>    par <span class="ot">&lt;-</span> <span class="fu">setNames</span>(<span class="fu">as.numeric</span>(dd[par_names]), par_names)</span>
+<span id="cb46-30"><a href="#cb46-30" aria-hidden="true" tabindex="-1"></a>    s <span class="ot">&lt;-</span> <span class="fu">run_foi</span>(par, n_weeks)</span>
+<span id="cb46-31"><a href="#cb46-31" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">is.null</span>(s)) <span class="fu">return</span>(<span class="cn">NULL</span>)</span>
+<span id="cb46-32"><a href="#cb46-32" aria-hidden="true" tabindex="-1"></a>    s <span class="sc">|&gt;</span> <span class="fu">mutate</span>(<span class="at">draw =</span> dd<span class="sc">$</span>draw)</span>
+<span id="cb46-33"><a href="#cb46-33" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb46-34"><a href="#cb46-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-35"><a href="#cb46-35" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> foi <span class="sc">|&gt;</span></span>
+<span id="cb46-36"><a href="#cb46-36" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(draw, date, lambda_C, lambda_H) <span class="sc">|&gt;</span></span>
+<span id="cb46-37"><a href="#cb46-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="fu">c</span>(lambda_C, lambda_H),</span>
+<span id="cb46-38"><a href="#cb46-38" aria-hidden="true" tabindex="-1"></a>               <span class="at">names_to =</span> <span class="st">"setting"</span>, <span class="at">values_to =</span> <span class="st">"lambda"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb46-39"><a href="#cb46-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">setting =</span> <span class="fu">recode</span>(setting,</span>
+<span id="cb46-40"><a href="#cb46-40" aria-hidden="true" tabindex="-1"></a>                          <span class="at">lambda_C =</span> <span class="st">"Community"</span>,</span>
+<span id="cb46-41"><a href="#cb46-41" aria-hidden="true" tabindex="-1"></a>                          <span class="at">lambda_H =</span> <span class="st">"Hospital"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb46-42"><a href="#cb46-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(setting, date) <span class="sc">|&gt;</span></span>
+<span id="cb46-43"><a href="#cb46-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">med =</span> <span class="fu">median</span>(lambda),</span>
+<span id="cb46-44"><a href="#cb46-44" aria-hidden="true" tabindex="-1"></a>            <span class="at">lo  =</span> <span class="fu">quantile</span>(lambda, <span class="fl">0.025</span>),</span>
+<span id="cb46-45"><a href="#cb46-45" aria-hidden="true" tabindex="-1"></a>            <span class="at">hi  =</span> <span class="fu">quantile</span>(lambda, <span class="fl">0.975</span>), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb46-46"><a href="#cb46-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(date, med, <span class="at">colour =</span> setting, <span class="at">fill =</span> setting)) <span class="sc">+</span></span>
+<span id="cb46-47"><a href="#cb46-47" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lo, <span class="at">ymax =</span> hi), <span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">colour =</span> <span class="cn">NA</span>) <span class="sc">+</span></span>
+<span id="cb46-48"><a href="#cb46-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb46-49"><a href="#cb46-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_breaks =</span> <span class="st">"3 months"</span>, <span class="at">date_labels =</span> <span class="st">"%b %Y"</span>) <span class="sc">+</span></span>
+<span id="cb46-50"><a href="#cb46-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"Force of infection (per day)"</span>, <span class="at">colour =</span> <span class="cn">NULL</span>, <span class="at">fill =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb46-51"><a href="#cb46-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
+<span id="cb46-52"><a href="#cb46-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"top"</span>)</span>
+<span id="cb46-53"><a href="#cb46-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-54"><a href="#cb46-54" aria-hidden="true" tabindex="-1"></a>ratio_band <span class="ot">&lt;-</span> foi <span class="sc">|&gt;</span></span>
+<span id="cb46-55"><a href="#cb46-55" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(ratio)) <span class="sc">|&gt;</span></span>
+<span id="cb46-56"><a href="#cb46-56" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(date) <span class="sc">|&gt;</span></span>
+<span id="cb46-57"><a href="#cb46-57" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">med =</span> <span class="fu">median</span>(ratio),</span>
+<span id="cb46-58"><a href="#cb46-58" aria-hidden="true" tabindex="-1"></a>            <span class="at">lo  =</span> <span class="fu">quantile</span>(ratio, <span class="fl">0.025</span>),</span>
+<span id="cb46-59"><a href="#cb46-59" aria-hidden="true" tabindex="-1"></a>            <span class="at">hi  =</span> <span class="fu">quantile</span>(ratio, <span class="fl">0.975</span>), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb46-60"><a href="#cb46-60" aria-hidden="true" tabindex="-1"></a> </span>
+<span id="cb46-61"><a href="#cb46-61" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> ratio_band <span class="sc">|&gt;</span></span>
+<span id="cb46-62"><a href="#cb46-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(date, med)) <span class="sc">+</span></span>
+<span id="cb46-63"><a href="#cb46-63" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb46-64"><a href="#cb46-64" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lo, <span class="at">ymax =</span> hi), <span class="at">alpha =</span> <span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb46-65"><a href="#cb46-65" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb46-66"><a href="#cb46-66" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>() <span class="sc">+</span></span>
+<span id="cb46-67"><a href="#cb46-67" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_breaks =</span> <span class="st">"3 months"</span>, <span class="at">date_labels =</span> <span class="st">"%b %Y"</span>) <span class="sc">+</span></span>
+<span id="cb46-68"><a href="#cb46-68" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"H/C ratio"</span>) <span class="sc">+</span></span>
+<span id="cb46-69"><a href="#cb46-69" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>(<span class="at">base_size =</span> <span class="dv">11</span>)</span>
+<span id="cb46-70"><a href="#cb46-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb46-71"><a href="#cb46-71" aria-hidden="true" tabindex="-1"></a>p1 <span class="sc">/</span> p2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03_res3_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Because the community population is 500 times larger than the hospital population, one case in the hospital is already infectious 500 times the community. So kappa &lt; 1 to scale it down?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>N_C0 <span class="sc">/</span> N_H0</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 541.3301</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>foi <span class="sc">|&gt;</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(ratio)) <span class="sc">|&gt;</span></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(date) <span class="sc">|&gt;</span></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="st">`</span><span class="at">Prevalence ratio</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">median</span>(prev_ratio),</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>            <span class="st">`</span><span class="at">Force of infection ratio</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">median</span>(ratio), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="sc">-</span>date) <span class="sc">|&gt;</span></span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(date, value, <span class="at">colour =</span> name)) <span class="sc">+</span></span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_log10</span>() <span class="sc">+</span></span>
+<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_breaks =</span> <span class="st">"3 months"</span>, <span class="at">date_labels =</span> <span class="st">"%b %Y"</span>) <span class="sc">+</span></span>
+<span id="cb49-12"><a href="#cb49-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">"Ratio (log scale)"</span>, <span class="at">colour =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb49-13"><a href="#cb49-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
+<span id="cb49-14"><a href="#cb49-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03_res3_files/figure-html/unnamed-chunk-28-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="relationship-between-s_h-and-s_c" class="level2">
+<h2 class="anchored" data-anchor-id="relationship-between-s_h-and-s_c">Relationship between <span class="math inline">\(s_H\)</span> and <span class="math inline">\(s_C\)</span></h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>df_plot <span class="ot">&lt;-</span> <span class="fu">expand_grid</span>(<span class="at">s_C =</span> <span class="fu">seq</span>(<span class="fl">0.0</span>, <span class="fl">0.15</span>, <span class="fl">0.01</span>), <span class="at">xi =</span> <span class="dv">3</span><span class="sc">:</span><span class="dv">8</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">s_H =</span> xi <span class="sc">*</span> s_C <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> s_C <span class="sc">*</span> (xi <span class="sc">-</span> <span class="dv">1</span>)))</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df_plot, <span class="fu">aes</span>(<span class="at">x=</span> s_C, <span class="at">y =</span> s_H, <span class="at">colour =</span> <span class="fu">factor</span>(xi))) <span class="sc">+</span></span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="fl">0.6</span>, <span class="fl">0.05</span>)) <span class="sc">+</span></span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">expression</span>(<span class="st">"community susceptible"</span> <span class="sc">~</span> <span class="fu">italic</span>(s)[C]),</span>
+<span id="cb50-9"><a href="#cb50-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="fu">expression</span>(<span class="st">"hospital susceptible"</span> <span class="sc">~</span> <span class="fu">italic</span>(s)[H]),</span>
+<span id="cb50-10"><a href="#cb50-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">colour =</span> <span class="fu">expression</span>(xi)</span>
+<span id="cb50-11"><a href="#cb50-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb50-12"><a href="#cb50-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_nejm</span>(<span class="at">guide =</span> <span class="fu">guide_legend</span>(<span class="at">reverse =</span> T)) <span class="sc">+</span></span>
+<span id="cb50-13"><a href="#cb50-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03_res3_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">"figs/chap3/sc_sh.png"</span>, <span class="at">width =</span> <span class="dv">4</span>, <span class="at">height =</span> <span class="dv">3</span>, <span class="at">dpi =</span> <span class="dv">300</span>, <span class="at">bg =</span> <span class="st">"white"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

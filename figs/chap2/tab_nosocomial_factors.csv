@@ -1,0 +1,21 @@
+Characteristic,Nosocomial/total (%),OR (95% CI)
+PANEL A. All cases (n = 2061),,
+Underlying medical conditions,,
+  No,607/1780 (34.1%),1 (ref)
+  Yes,181/281 (64.4%),4.07 (3.09-5.35)
+"Age at onset (total effect, unadjusted)",,
+  <9 m,395/939 (42.1%),1 (ref)
+  9-17 m,262/643 (40.7%),0.95 (0.77-1.16)
+  18-59 m,93/299 (31.1%),0.62 (0.47-0.82)
+  60+ m,38/180 (21.1%),0.37 (0.25-0.54)
+PANEL B. Age-eligible cases (n = 1122),,
+Underlying medical conditions,,
+  No,284/952 (29.8%),1 (ref)
+  Yes,109/170 (64.1%),5.20 (3.62-7.47)
+Vaccination status,,
+  Vaccinated,32/198 (16.2%),1 (ref)
+  Unvaccinated,361/924 (39.1%),2.43 (1.60-3.71)
+"Age at onset (total effect, unadjusted)",,
+  9-17 m,262/643 (40.7%),1 (ref)
+  18-59 m,93/299 (31.1%),0.66 (0.49-0.88)
+  60+ m,38/180 (21.1%),0.39 (0.26-0.58)

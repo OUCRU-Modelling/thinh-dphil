@@ -1,0 +1,39 @@
+---
+title: "sem"
+format: html
+---
+
+```{r}
+library(tidyverse)
+library(lavaan)
+```
+
+A linear regression is an SEM with one equation and no latent variables
+
+```{r}
+set.seed(2026)
+n <- 500
+dat <- tibble(
+  age = rnorm(n, 50, 10),
+  bmi = 22 + 0.05 * age + rnorm(n, sd = 3),
+  sbp = 90 + 0.5 * age + 1.2 * bmi + rnorm(n, sd = 10)
+)
+
+fit_lm <- lm(sbp ~ age + bmi, data = dat)
+coef(fit_lm)
+sigma(fit_lm)^2
+```
+
+The same model in lavaan
+
+```{r}
+model <- "sbp ~ age + bmi"
+
+fit_sem <- sem(model, data = dat, meanstructure = TRUE)
+parameterEstimates(fit_sem) |> as_tibble()
+```
+
+```{r}
+lavInspect(fit_sem, "free")
+```
+
