@@ -825,7 +825,25 @@ foi |>
   theme(legend.position = "bottom")
 ```
 
+A few ways I've tried:
 
+- Fit alpha_M (admission due to measles): kappa doesn't change much, but alpha_M becomes much lower and not making sense
+
+- Add the vaccination campaign (by having S_C -> R_C according to HCDC data). This just increase the reporting rate of the observation model.
+
+After a few discussion with Claude, looks like what I model admission and discharge is very specific to inpatient. It suggests to model an outpatient clinic, where most infection may occur. I checked the outpatient data of CH1 and there are on average 2000 visits per day, much higher than inpatients.
+
+$$\frac{dS_C}{dt} = -(\lambda_C + \lambda_O)S_C - \xi\alpha S_C + \delta S_H$$
+
+$$\frac{dE_C}{dt} = (\lambda_C + \lambda_O)S_C - (\sigma + \xi\alpha)E_C + \delta E_H$$
+
+$$\lambda_O(t) = \omega_S \kappa_O \beta \frac{I_O(t)}{N_O(t)}$$
+
+$\omega_S$ is the share of the day a person in compartment $X$ spends in the outpatient clinic.
+
+$\kappa_O$ is transmission per unit time inside a clinic relative to the community, maybe this one will be > 1.
+
+What do you think?
 
 ## Relationship between $s_H$ and $s_C$
 

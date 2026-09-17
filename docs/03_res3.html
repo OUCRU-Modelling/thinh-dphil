@@ -849,7 +849,7 @@ window.Quarto = {
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system.time</span>(<span class="fu">replicate</span>(<span class="dv">100</span>, <span class="fu">loglik</span>(p_start)))   <span class="co"># seconds per 100 evaluations</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-   1.28    0.02    1.44 </code></pre>
+   1.07    0.01    1.07 </code></pre>
 </div>
 </div>
 </section>
@@ -1138,6 +1138,18 @@ phi   1.005 25.975 13.530 23.276 38.530
 </div>
 </div>
 </div>
+<p>A few ways I’ve tried:</p>
+<ul>
+<li><p>Fit alpha_M (admission due to measles): kappa doesn’t change much, but alpha_M becomes much lower and not making sense</p></li>
+<li><p>Add the vaccination campaign (by having S_C -&gt; R_C according to HCDC data). This just increase the reporting rate of the observation model.</p></li>
+</ul>
+<p>After a few discussion with Claude, looks like what I model admission and discharge is very specific to inpatient. It suggests to model an outpatient clinic, where most infection may occur. I checked the outpatient data of CH1 and there are on average 2000 visits per day, much higher than inpatients.</p>
+<p><span class="math display">\[\frac{dS_C}{dt} = -(\lambda_C + \lambda_O)S_C - \xi\alpha S_C + \delta S_H\]</span></p>
+<p><span class="math display">\[\frac{dE_C}{dt} = (\lambda_C + \lambda_O)S_C - (\sigma + \xi\alpha)E_C + \delta E_H\]</span></p>
+<p><span class="math display">\[\lambda_O(t) = \omega_S \kappa_O \beta \frac{I_O(t)}{N_O(t)}\]</span></p>
+<p><span class="math inline">\(\omega_S\)</span> is the share of the day a person in compartment <span class="math inline">\(X\)</span> spends in the outpatient clinic.</p>
+<p><span class="math inline">\(\kappa_O\)</span> is transmission per unit time inside a clinic relative to the community, maybe this one will be &gt; 1.</p>
+<p>What do you think?</p>
 </section>
 </section>
 <section id="relationship-between-s_h-and-s_c" class="level2">
