@@ -76,20 +76,24 @@ plot_interval <- function(data, var, trim = 0.99, xlab = "days", ylab = "cases")
 }
 ```
 
+```{r}
+readRDS2 <- function(file) readRDS(file.path(path2data, file))
+```
+
+
 ## Data
 
 Census:
 
 ```{r}
-df_census <- file.path(path2data, census_file) |> 
-  readRDS()
+df_census <- readRDS2(census_file)
 ```
 
 Case notification HCMC (for calibration):
 
 ```{r}
-df_hcmc <- file.path(path2data, case_hcmc) |> 
-  readRDS() |> 
+df_hcmc <- case_hcmc |> 
+  readRDS2() |> 
   mutate(
     ngay_kp = as.Date(as.numeric(ngay_kp), origin = "1899-12-30"),
     onset_delay = ngay_nv - ngay_kp,
@@ -100,8 +104,8 @@ df_hcmc <- file.path(path2data, case_hcmc) |>
 National Children's Hospital line list:
 
 ```{r}
-df_hn <- file.path(path2data, case_hn) |>
-  readRDS() |> 
+df_hn <- case_hn |>
+  readRDS2() |> 
   mutate(
     discharge_date = dmy(date.of.out.hospital),
     admission_date = dmy(admission_date),
@@ -120,11 +124,9 @@ df_hn <- file.path(path2data, case_hn) |>
 Children's Hospital 2 in HCMC
 
 ```{r}
-df_ch2 <- file.path(path2data, case_ch2) |> 
-  readRDS() |> 
-  filter(
-    year(admission) %in% c(2024, 2025)
-  )
+df_ch2 <- case_ch2 |> 
+  readRDS2() |> 
+  filter(year(admission) %in% c(2024, 2025))
 ```
 
 Vaccination campaign
@@ -140,8 +142,7 @@ df_cp <- file.path(path2data, campaign_file) |>
 Children's Hospital 1 outpatient
 
 ```{r}
-df_ch1_out <- file.path(path2data, ch1_out_file) |> 
-  readRDS()
+df_ch1_out <- readRDS2(ch1_out_file)
 ```
 
 ## Model
