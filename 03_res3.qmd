@@ -12,7 +12,11 @@ editor_options:
 Path to data:
 
 ```{r}
-path2data <- paste0("C:/Users/ongph/github/data/dphil_res3")
+if (Sys.getenv("USER") == "MarcChoisy" | Sys.getenv("USER") == "marc") {
+  path2data <- paste0("~/Library/CloudStorage/OneDrive-OxfordUniversityClinicalResearchUnit/SharePoint/OUCRU Modelling/Thinh's DPhil/")
+} else {
+  path2data <- paste0("C:/Users/ongph/github/data/dphil_res3")
+}
 ```
 
 Files names:
