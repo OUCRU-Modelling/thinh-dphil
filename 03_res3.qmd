@@ -13,9 +13,10 @@ Path to data:
 
 ```{r}
 if (Sys.getenv("USER") == "MarcChoisy" | Sys.getenv("USER") == "marc") {
-  path2data <- paste0("~/Library/CloudStorage/OneDrive-OxfordUniversityClinicalResearchUnit/SharePoint/OUCRU Modelling/Thinh's DPhil/")
+  path2data <- paste0("~/Library/CloudStorage/OneDrive-OxfordUniversityClinical",
+                      "ResearchUnit/SharePoint/OUCRU Modelling/Thinh's DPhil")
 } else {
-  path2data <- paste0("C:/Users/ongph/github/data/dphil_res3")
+  path2data <- "C:/Users/ongph/github/data/dphil_res3"
 }
 ```
 
@@ -40,7 +41,8 @@ ch1_out_file <- "ch1_visit_day.rds"
 ## Packages
 
 ```{r, message=FALSE}
-required <- c("tidyverse", "fitdistrplus", "ggsci", "BayesianTools", "deSolve", "BayesianTools", "patchwork")
+required <- c("tidyverse", "fitdistrplus", "ggsci", "BayesianTools", "deSolve",
+              "BayesianTools", "patchwork")
 
 # Installing those that are not installed yet:
 to_install <- required[! required %in% installed.packages()[, "Package"]]
@@ -53,8 +55,7 @@ invisible(sapply(required, library, character.only = TRUE))
 ## Functions
 
 ```{r}
-plot_interval <- function(data, var, trim = 0.99,
-                          xlab = "days", ylab = "cases") {
+plot_interval <- function(data, var, trim = 0.99, xlab = "days", ylab = "cases") {
   x <- dplyr::pull(data, {{ var }})
   x <- x[!is.na(x)]
 
@@ -370,7 +371,8 @@ N <- df_census |>
 cat("Total population N:", N)
 ```
 
-Children's Hospital 1 reported 90,000 admissions per year. Assume that the total HCMC is 5 times CH1, but only 40% serve HCMC residents.
+Children's Hospital 1 reported 90,000 admissions per year. Assume that the total HCMC
+is 5 times CH1, but only 40% serve HCMC residents.
 
 The mean length of stay of a child is reported as 5.2 days.
 
@@ -396,7 +398,8 @@ Estimate onset to admission delay. Only Ha Noi data has this:
 ```{r}
 d <- df_hn |>
   mutate(ad_delay = as.numeric(admission_date - onset_date)) |>
-  filter(!is.na(ad_delay), ad_delay >= 0, ad_delay <= 10, source_province == "community", province == "Ha Noi")
+  filter(!is.na(ad_delay), ad_delay >= 0, ad_delay <= 10,
+         source_province == "community", province == "Ha Noi")
 
 est <- d |> summarise(
   n = n(),
@@ -408,7 +411,8 @@ est <- d |> summarise(
 
 est
 
-plot_interval(d, ad_delay, trim = 0.99, xlab = "onset to admission delay (days)", ylab = "cases")
+plot_interval(d, ad_delay, trim = 0.99,
+              xlab = "onset to admission delay (days)", ylab = "cases")
 
 alpha_M <- 1/est$addelay_M
 cat("alpha_M:", alpha_M)
@@ -644,7 +648,8 @@ system.time(replicate(100, loglik(p_start)))   # seconds per 100 evaluations
 # saveRDS(fit, "measles_fit.rds")
 ```
 
-It fit quite well, other parameters make sense except kappa is too small while I expect it should be > 1.
+It fit quite well, other parameters make sense except kappa is too small while I expect
+it should be > 1.
 
 ```{r}
 fit <- readRDS("measles_fit.rds")
@@ -806,7 +811,9 @@ p2 <- ratio_band |>
 p1 / p2
 ```
 
-Because the community population is 500 times larger than the hospital population, one case in the hospital is already infectious 500 times the community. So kappa < 1 to scale it down?
+Because the community population is 500 times larger than the hospital population, one
+case in the hospital is already infectious 500 times the community. So kappa < 1 to
+scale it down?
 
 ```{r}
 N_C0 / N_H0
@@ -831,11 +838,16 @@ foi |>
 
 A few ways I've tried:
 
-- Fit alpha_M (admission due to measles): kappa doesn't change much, but alpha_M becomes much lower and not making sense
+- Fit alpha_M (admission due to measles): kappa doesn't change much, but alpha_M
+becomes much lower and not making sense
 
-- Add the vaccination campaign (by having S_C -> R_C according to HCDC data). This just increase the reporting rate of the observation model.
+- Add the vaccination campaign (by having S_C -> R_C according to HCDC data). This just
+increase the reporting rate of the observation model.
 
-After a few discussion with Claude, looks like what I model admission and discharge is very specific to inpatient. It suggests to model an outpatient clinic, where most infection may occur. I checked the outpatient data of CH1 and there are on average 2000 visits per day, much higher than inpatients.
+After a few discussion with Claude, looks like what I model admission and discharge is
+very specific to inpatient. It suggests to model an outpatient clinic, where most
+infection may occur. I checked the outpatient data of CH1 and there are on average 2000
+visits per day, much higher than inpatients.
 
 $$\frac{dS_C}{dt} = -(\lambda_C + \lambda_O)S_C - \xi\alpha S_C + \delta S_H$$
 
@@ -843,9 +855,11 @@ $$\frac{dE_C}{dt} = (\lambda_C + \lambda_O)S_C - (\sigma + \xi\alpha)E_C + \delt
 
 $$\lambda_O(t) = \omega_S \kappa_O \beta \frac{I_O(t)}{N_O(t)}$$
 
-$\omega_S$ is the share of the day a person in compartment $X$ spends in the outpatient clinic.
+$\omega_S$ is the share of the day a person in compartment $X$ spends in the outpatient
+clinic.
 
-$\kappa_O$ is transmission per unit time inside a clinic relative to the community, maybe this one will be > 1.
+$\kappa_O$ is transmission per unit time inside a clinic relative to the community,
+maybe this one will be > 1.
 
 What do you think?
 
