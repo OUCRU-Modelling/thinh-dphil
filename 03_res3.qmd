@@ -56,15 +56,16 @@ invisible(sapply(required, library, character.only = TRUE))
 
 ```{r}
 plot_interval <- function(data, var, trim = 0.99, xlab = "days", ylab = "cases") {
-  x <- dplyr::pull(data, {{ var }})
-  x <- x[!is.na(x)]
+  x <- data |> 
+    dplyr::select({{ var }}) |> 
+    drop_na() |> 
+    pull({{ var }})
 
   stats <- tibble(stat = c("mean", "median"),
                   value = c(mean(x), median(x)))
 
   ggplot(data, aes({{ var }})) +
-    geom_histogram(binwidth = 1, boundary = -0.5,
-                   fill = "grey80", colour = "white") +
+    geom_histogram(binwidth = 1, boundary = -0.5, fill = "grey80", colour = "white") +
     geom_vline(data = stats, aes(xintercept = value, colour = stat, linetype = stat),
                linewidth = 0.7) +
     scale_colour_manual(values = c(mean = "black", median = "grey40")) +
