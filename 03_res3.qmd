@@ -193,7 +193,7 @@ measles_ode <- function(t, y, p) {
   N_H_mix <- S_H + E_H + I_H_pre + I_H_post + R_H
   
   lambda_C <- beta_C * (I_C_pre + I_C_post) / N_C
-  lambda_H <- beta_H * (I_H_pre + I_H_post) / N_H_mix
+  lambda_H <- if (N_H_mix > 0) beta_H * (I_H_pre + I_H_post) / N_H_mix else 0   # no hospital: no ward infections
   
   ## ---- community
   dS_C      <- -lambda_C * S_C - xi_alpha * S_C + delta * S_H
@@ -1894,6 +1894,283 @@ expand_grid(s_H0 = c(0.1, base$s_H0, 0.5),
   mutate(kappa_star = 1 / k_hh_parts(base$beta_C, s_H0, los, p_i, base$p_a)$K_HH,
          R_HH_at_median_kappa = base$kappa / kappa_star) |>
   print(n = Inf)
+```
+
+## Counterfactual hospital vs no hospital
+
+```{r}
+## total infections, run to fade-out, for one set of conditions
+total_infections <- function(beta_C, kappa, p_a, p_i, s_C0, s_H0, seed,
+                             los, adm, threshold = 1, ...) {
+  stopifnot(seed > threshold)   # otherwise the run stops at once
+  
+  N_H   <- adm * los
+  N_C   <- N - N_H
+  xi    <- s_H0 * (1 - s_C0) / (s_C0 * (1 - s_H0))
+  alpha <- adm / N_C / (1 + s_C0 * (xi - 1))
+  
+  y0 <- c(S_C = s_C0 * N_C - seed, E_C = seed, I_C_pre = 0, I_C_post = 0,
+          R_C = (1 - s_C0) * N_C,
+          S_H = s_H0 * N_H, E_H = 0, I_H_pre = 0, I_H_post = 0, Q = 0,
+          R_H = (1 - s_H0) * N_H,
+          cum_onset_C = 0, cum_onset_H = 0, cum_noso = 0,
+          cum_adm_rash = 0, cum_inf_C = 0)[state_names]
+  
+  p <- c(beta_C = beta_C, beta_H = kappa * beta_C,
+         xi_alpha = xi * alpha, alpha = alpha, p_a = p_a, p_i = p_i,
+         delta = 1 / los, delta_M = delta_M,
+         sigma = sigma, eta = eta, gamma = gamma)
+  
+  sol <- ode(y0, 0:max_days, measles_ode, p, method = "lsoda",
+             rootfunc = make_stop_condition(threshold),
+             atol = 1e-3, rtol = 1e-6)
+  last <- function(x) unname(sol[nrow(sol), x])   # value at the stop time
+  
+  tibble(total = last("cum_inf_C") + last("cum_noso"),   # infections after the start
+         noso  = last("cum_noso"),
+         faded = last("time") < max_days)
+}
+
+## total infections for every row of a scenario table (keeps the input columns)
+run_all <- function(scen) bind_cols(scen, pmap(scen, total_infections) |> list_rbind())
+
+## the same population without the hospital: no admissions and no transmission
+## inside. Children with rash stay in the community and transmit like other
+## children with rash, as the model assumes for children who are not admitted.
+## The children who would have been inpatients live in the community, so
+## community immunity becomes the population average (this uses the original
+## adm, so keep it first).
+no_hospital <- function(scen) {
+  scen |>
+    mutate(s_C0  = (s_C0 * (N - adm * los) + s_H0 * adm * los) / N,
+           kappa = 0,
+           p_a   = 0,
+           adm   = 0)   # no admissions, so N_H = adm * los = 0: no hospital
+}
+
+## scenario values shared by both panels
+los_grid   <- seq(2, 14, by = 1)          # x-axis: mean length of stay (days)
+kappa_grid <- seq(0, 1, by = 0.1)         # y-axis
+p_i_values <- c(0.1, 0.3, 0.5, 0.7, 0.9)  # columns
+
+## =============================================================================
+## Panel A: the fitted community, across inpatient immunity (about 6 minutes)
+## =============================================================================
+s_H0_values <- c(0.1, base$s_H0, 0.4, 0.5, 0.6)   # rows
+
+# ## with the hospital
+# hosp_A <- base |>
+#   select(-kappa, -p_i, -s_H0, -los) |>
+#   expand_grid(s_H0 = s_H0_values, p_i = p_i_values,
+#               los = los_grid, kappa = kappa_grid) |>
+#   run_all()
+# 
+# ## without the hospital: one run per s_H0 and length of stay, which set how
+# ## many susceptible children the hospital holds (the population average)
+# none_A <- base |>
+#   select(-s_H0, -los) |>
+#   expand_grid(s_H0 = s_H0_values, los = los_grid) |>
+#   no_hospital() |>
+#   run_all() |>
+#   select(s_H0, los, total_none = total, faded_none = faded)
+# 
+# ## change in total infections: above 0, the hospital amplifies
+# net_A <- hosp_A |>
+#   left_join(none_A, by = c("s_H0", "los")) |>
+#   mutate(net_pct = 100 * (total / total_none - 1),
+#          faded   = faded & faded_none)
+# count(net_A, faded)   # any FALSE: raise max_days
+# saveRDS(net_A, "net_A.rds")
+
+net_A <- readRDS("net_A.rds")
+
+## the fitted hospital over posterior draws
+set.seed(20260922)
+draws <- post |>
+  slice_sample(n = 200) |>
+  transmute(draw = row_number(), beta_C, kappa, p_a, p_i = p_i_fixed,
+            s_C0, s_H0, seed, los = 1 / delta, adm = adm_per_day)
+
+post_net <- run_all(draws) |>
+  select(draw, total_hosp = total, faded) |>
+  left_join(draws |> no_hospital() |> run_all() |>
+              select(draw, total_none = total, faded_none = faded),
+            by = "draw") |>
+  mutate(net_pct = 100 * (total_hosp / total_none - 1))
+
+post_net |>
+  summarise(all_faded   = all(faded & faded_none),
+            net_med     = median(net_pct),
+            net_lo      = quantile(net_pct, 0.025),
+            net_hi      = quantile(net_pct, 0.975),
+            p_amplifier = mean(net_pct > 0))   # share of draws where the hospital amplifies
+
+## =============================================================================
+## Panel B: one imported case, across community immunity
+## =============================================================================
+s_C0_values <- c(0.03, 0.04, 0.05, 0.06, 0.07)   # rows
+
+## inpatients keep the fitted odds of being susceptible relative to the community
+xi0 <- derived(par_med)$xi
+s_H0_from <- \(s_C0) xi0 * s_C0 / (1 + s_C0 * (xi0 - 1))
+
+## one imported case in the community; runs stop when fewer than 0.001 people
+## are infected, so each total is the expected number of infections it causes.
+## s_comm keeps the community value (no_hospital() changes s_C0).
+imports <- base |>
+  select(-s_C0, -s_H0, -kappa, -p_i, -los) |>
+  expand_grid(s_C0 = s_C0_values) |>
+  mutate(s_H0 = s_H0_from(s_C0), s_comm = s_C0, seed = 1, threshold = 1e-3)
+# 
+# ## with the hospital
+# hosp_B <- imports |>
+#   expand_grid(p_i = p_i_values, los = los_grid, kappa = kappa_grid) |>
+#   run_all()
+# 
+# ## without the hospital: one run per s_C0 and length of stay
+# none_B <- imports |>
+#   expand_grid(los = los_grid) |>
+#   mutate(p_i = p_i_fixed) |>   # not used without a hospital, but the function needs it
+#   no_hospital() |>
+#   run_all() |>
+#   select(s_comm, los, total_none = total, faded_none = faded)
+# 
+# net_B <- hosp_B |>
+#   left_join(none_B, by = c("s_comm", "los")) |>
+#   mutate(net_pct = 100 * (total / total_none - 1),
+#          faded   = faded & faded_none)
+# count(net_B, faded)   # a few FALSE near the threshold are expected
+# saveRDS(net_B, "net_B.rds")
+
+net_B <- readRDS("net_B.rds")
+
+## =============================================================================
+## Figure (fast: reload with readRDS() to redraw without rerunning)
+## =============================================================================
+gsea6 <- pal_gsea("default", n = 6)(6)
+
+brk_net <- c(-100, -50, -20, 0, 20, 50, Inf)
+lab_net <- c("-100 to -50%", "-50 to -20%", "-20 to 0%",
+             "0 to 20%", "20 to 50%", "more than 50%")
+
+## one heatmap design for both panels: length of stay by kappa, one panel per
+## combination of the row variable and p_i
+net_heatmap <- function(data, facets, labeller, fitted_pt) {
+  ggplot(data, aes(los, kappa)) +
+    geom_contour_filled(aes(z = net_pct), breaks = brk_net, show.legend = TRUE) +
+    geom_contour(aes(z = net_pct), breaks = 0, colour = "black", linewidth = 0.8) +
+    geom_hline(yintercept = kappa_ci, colour = "grey30", linetype = "dashed",
+               linewidth = 0.4) +
+    geom_point(data = fitted_pt, shape = 21, fill = "white", colour = "black",
+               size = 2.2, stroke = 0.8) +
+    scale_fill_manual(values = gsea6, labels = lab_net, drop = FALSE,
+                      name = "Change in total infections with the hospital") +
+    scale_x_continuous(breaks = c(4, 8, 12), expand = c(0, 0)) +
+    scale_y_continuous(breaks = c(0, 0.5, 1), labels = c("0", "0.5", "1"),
+                       expand = c(0, 0)) +
+    facet_grid(facets, labeller = labeller) +
+    guides(fill = guide_legend(nrow = 2, byrow = TRUE, title.position = "top")) +
+    labs(x = "Mean length of stay (days)", y = expression(kappa)) +
+    theme_thesis +
+    theme(panel.spacing = unit(3, "mm"),
+          strip.background = element_blank(),
+          strip.text.y = element_text(angle = 0),
+          axis.title.y = element_text(angle = 0, vjust = 0.5),
+          legend.text = element_text(hjust = 0))
+}
+
+## A: the fitted hospital sits in the panel with the fitted s_H0 and p_i
+fig_A <- net_heatmap(
+  net_A, s_H0 ~ p_i,
+  label_bquote(rows = s[H0] == .(round(s_H0, 2)), cols = p[i] == .(p_i)),
+  tibble(los = 1 / delta, kappa = base$kappa, s_H0 = base$s_H0, p_i = p_i_fixed)
+)
+
+## B: the fitted hospital appears in every row of its p_i column
+fig_B <- net_heatmap(
+  net_B, s_comm ~ p_i,
+  label_bquote(rows = list(s[C0] == .(s_comm), s[H0] == .(round(s_H0_from(s_comm), 2))),
+               cols = p[i] == .(p_i)),
+  tibble(los = 1 / delta, kappa = base$kappa, p_i = p_i_fixed)
+)
+
+fig_amp <- fig_A / fig_B +
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "A") &
+  theme(legend.position = "bottom",
+        plot.tag = element_text(face = "bold", size = 14))
+
+fig_amp
+
+# ggsave("figs/chap3/amplifier.png", fig_amp, width = 5, height = 8,
+#        dpi = 300, bg = "white")
+
+
+## ---- 1. the fitted hospital, over posterior draws (panel A) --------------------
+post_net |>
+  summarise(net_med     = median(net_pct),
+            net_lo      = quantile(net_pct, 0.025),
+            net_hi      = quantile(net_pct, 0.975),
+            p_amplifier = mean(net_pct > 0))
+
+## ---- 2. kappa above which the hospital amplifies (the black line) ---------------
+## linear interpolation between the last kappa below 0% and the first at or above;
+## NA means the hospital does not amplify for any kappa up to 1
+kappa_amp <- function(kappa, net) {
+  i <- which(net >= 0)[1]
+  if (is.na(i)) return(NA_real_)
+  if (i == 1) return(kappa[1])
+  kappa[i - 1] + (0 - net[i - 1]) * (kappa[i] - kappa[i - 1]) / (net[i] - net[i - 1])
+}
+
+thr_A <- net_A |>
+  arrange(s_H0, p_i, los, kappa) |>
+  group_by(s_H0 = round(s_H0, 2), p_i, los) |>
+  summarise(kappa_amp = kappa_amp(kappa, net_pct), .groups = "drop")
+
+thr_B <- net_B |>
+  arrange(s_comm, p_i, los, kappa) |>
+  group_by(s_C0 = s_comm, p_i, los) |>
+  summarise(kappa_amp = kappa_amp(kappa, net_pct), .groups = "drop")
+
+## thresholds at mean stays of 2, 5 and 14 days (columns los_2, los_5, los_14)
+thr_A |>
+  filter(los %in% c(2, 5, 14)) |>
+  pivot_wider(names_from = los, values_from = kappa_amp, names_prefix = "los_") |>
+  print(n = Inf)
+
+thr_B |>
+  filter(los %in% c(2, 5, 14)) |>
+  pivot_wider(names_from = los, values_from = kappa_amp, names_prefix = "los_") |>
+  print(n = Inf)
+
+## ---- 3. panel A: the change when s_H0 = 0.1 ----------------------------------------
+net_A |>
+  filter(near(s_H0, 0.1)) |>
+  summarise(min = min(net_pct), max = max(net_pct))
+
+## ---- 4. panel B: the absolute numbers behind the percentages --------------------
+net_B |>
+  filter(los == 5, near(kappa, 0.3) | near(kappa, 0.5) | near(kappa, 0.7),
+         p_i %in% c(0.1, 0.3, 0.5)) |>
+  select(s_C0 = s_comm, p_i, kappa, with_hospital = total,
+         no_hospital = total_none, net_pct) |>
+  arrange(s_C0, p_i, kappa) |>
+  print(n = Inf)
+
+## ---- 5. panel B: the fitted hospital (white points), at the fitted stay ---------
+fitted_B <- imports |>
+  mutate(kappa = base$kappa, p_i = p_i_fixed, los = 1 / delta) |>
+  run_all() |>
+  select(s_C0 = s_comm, with_hospital = total) |>
+  left_join(imports |>
+              mutate(p_i = p_i_fixed, los = 1 / delta) |>
+              no_hospital() |>
+              run_all() |>
+              select(s_C0 = s_comm, no_hospital = total),
+            by = "s_C0") |>
+  mutate(net_pct = 100 * (with_hospital / no_hospital - 1))
+fitted_B
 ```
 
 

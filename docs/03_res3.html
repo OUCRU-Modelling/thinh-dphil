@@ -237,6 +237,7 @@ window.Quarto = {
   <ul class="collapse">
   <li><a href="#r_hh" id="toc-r_hh" class="nav-link" data-scroll-target="#r_hh">R_HH</a></li>
   </ul></li>
+  <li><a href="#counterfactual-hospital-vs-no-hospital" id="toc-counterfactual-hospital-vs-no-hospital" class="nav-link" data-scroll-target="#counterfactual-hospital-vs-no-hospital">Counterfactual hospital vs no hospital</a></li>
   <li><a href="#relationship-between-s_h-and-s_c" id="toc-relationship-between-s_h-and-s_c" class="nav-link" data-scroll-target="#relationship-between-s_h-and-s_c">Relationship between <span class="math inline">\(s_H\)</span> and <span class="math inline">\(s_C\)</span></a></li>
   </ul>
 </nav>
@@ -434,7 +435,7 @@ window.Quarto = {
 <span id="cb11-34"><a href="#cb11-34" aria-hidden="true" tabindex="-1"></a>  N_H_mix <span class="ot">&lt;-</span> S_H <span class="sc">+</span> E_H <span class="sc">+</span> I_H_pre <span class="sc">+</span> I_H_post <span class="sc">+</span> R_H</span>
 <span id="cb11-35"><a href="#cb11-35" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb11-36"><a href="#cb11-36" aria-hidden="true" tabindex="-1"></a>  lambda_C <span class="ot">&lt;-</span> beta_C <span class="sc">*</span> (I_C_pre <span class="sc">+</span> I_C_post) <span class="sc">/</span> N_C</span>
-<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>  lambda_H <span class="ot">&lt;-</span> beta_H <span class="sc">*</span> (I_H_pre <span class="sc">+</span> I_H_post) <span class="sc">/</span> N_H_mix</span>
+<span id="cb11-37"><a href="#cb11-37" aria-hidden="true" tabindex="-1"></a>  lambda_H <span class="ot">&lt;-</span> <span class="cf">if</span> (N_H_mix <span class="sc">&gt;</span> <span class="dv">0</span>) beta_H <span class="sc">*</span> (I_H_pre <span class="sc">+</span> I_H_post) <span class="sc">/</span> N_H_mix <span class="cf">else</span> <span class="dv">0</span>   <span class="co"># no hospital: no ward infections</span></span>
 <span id="cb11-38"><a href="#cb11-38" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb11-39"><a href="#cb11-39" aria-hidden="true" tabindex="-1"></a>  <span class="do">## ---- community</span></span>
 <span id="cb11-40"><a href="#cb11-40" aria-hidden="true" tabindex="-1"></a>  dS_C      <span class="ot">&lt;-</span> <span class="sc">-</span>lambda_C <span class="sc">*</span> S_C <span class="sc">-</span> xi_alpha <span class="sc">*</span> S_C <span class="sc">+</span> delta <span class="sc">*</span> S_H</span>
@@ -2389,23 +2390,324 @@ Infections per infectious child, kappa x S                 0.88 (95% CrI 0.063 t
 </div>
 </section>
 </section>
-<section id="relationship-between-s_h-and-s_c" class="level2">
-<h2 class="anchored" data-anchor-id="relationship-between-s_h-and-s_c">Relationship between <span class="math inline">\(s_H\)</span> and <span class="math inline">\(s_C\)</span></h2>
+<section id="counterfactual-hospital-vs-no-hospital" class="level2">
+<h2 class="anchored" data-anchor-id="counterfactual-hospital-vs-no-hospital">Counterfactual hospital vs no hospital</h2>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb98"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a>df_plot <span class="ot">&lt;-</span> <span class="fu">expand_grid</span>(<span class="at">s_C =</span> <span class="fu">seq</span>(<span class="fl">0.0</span>, <span class="fl">0.15</span>, <span class="fl">0.01</span>), <span class="at">xi =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb98-2"><a href="#cb98-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">s_H =</span> xi <span class="sc">*</span> s_C <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> s_C <span class="sc">*</span> (xi <span class="sc">-</span> <span class="dv">1</span>)))</span>
-<span id="cb98-3"><a href="#cb98-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb98-4"><a href="#cb98-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df_plot, <span class="fu">aes</span>(<span class="at">x =</span> s_C, <span class="at">y =</span> s_H, <span class="at">colour =</span> <span class="fu">factor</span>(xi))) <span class="sc">+</span></span>
-<span id="cb98-5"><a href="#cb98-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb98-6"><a href="#cb98-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">slope =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"grey"</span>) <span class="sc">+</span></span>
-<span id="cb98-7"><a href="#cb98-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="fl">0.6</span>, <span class="fl">0.05</span>)) <span class="sc">+</span></span>
-<span id="cb98-8"><a href="#cb98-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb98-9"><a href="#cb98-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">expression</span>(<span class="st">"community susceptible"</span> <span class="sc">~</span> <span class="fu">italic</span>(s)[C]),</span>
-<span id="cb98-10"><a href="#cb98-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="fu">expression</span>(<span class="st">"hospital susceptible"</span> <span class="sc">~</span> <span class="fu">italic</span>(s)[H]),</span>
-<span id="cb98-11"><a href="#cb98-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">colour =</span> <span class="fu">expression</span>(xi)</span>
-<span id="cb98-12"><a href="#cb98-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb98-13"><a href="#cb98-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_nejm</span>(<span class="at">guide =</span> <span class="fu">guide_legend</span>(<span class="at">reverse =</span> <span class="cn">TRUE</span>)) <span class="sc">+</span></span>
-<span id="cb98-14"><a href="#cb98-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb98"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb98-1"><a href="#cb98-1" aria-hidden="true" tabindex="-1"></a><span class="do">## total infections, run to fade-out, for one set of conditions</span></span>
+<span id="cb98-2"><a href="#cb98-2" aria-hidden="true" tabindex="-1"></a>total_infections <span class="ot">&lt;-</span> <span class="cf">function</span>(beta_C, kappa, p_a, p_i, s_C0, s_H0, seed,</span>
+<span id="cb98-3"><a href="#cb98-3" aria-hidden="true" tabindex="-1"></a>                             los, adm, <span class="at">threshold =</span> <span class="dv">1</span>, ...) {</span>
+<span id="cb98-4"><a href="#cb98-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stopifnot</span>(seed <span class="sc">&gt;</span> threshold)   <span class="co"># otherwise the run stops at once</span></span>
+<span id="cb98-5"><a href="#cb98-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb98-6"><a href="#cb98-6" aria-hidden="true" tabindex="-1"></a>  N_H   <span class="ot">&lt;-</span> adm <span class="sc">*</span> los</span>
+<span id="cb98-7"><a href="#cb98-7" aria-hidden="true" tabindex="-1"></a>  N_C   <span class="ot">&lt;-</span> N <span class="sc">-</span> N_H</span>
+<span id="cb98-8"><a href="#cb98-8" aria-hidden="true" tabindex="-1"></a>  xi    <span class="ot">&lt;-</span> s_H0 <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> s_C0) <span class="sc">/</span> (s_C0 <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> s_H0))</span>
+<span id="cb98-9"><a href="#cb98-9" aria-hidden="true" tabindex="-1"></a>  alpha <span class="ot">&lt;-</span> adm <span class="sc">/</span> N_C <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> s_C0 <span class="sc">*</span> (xi <span class="sc">-</span> <span class="dv">1</span>))</span>
+<span id="cb98-10"><a href="#cb98-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb98-11"><a href="#cb98-11" aria-hidden="true" tabindex="-1"></a>  y0 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">S_C =</span> s_C0 <span class="sc">*</span> N_C <span class="sc">-</span> seed, <span class="at">E_C =</span> seed, <span class="at">I_C_pre =</span> <span class="dv">0</span>, <span class="at">I_C_post =</span> <span class="dv">0</span>,</span>
+<span id="cb98-12"><a href="#cb98-12" aria-hidden="true" tabindex="-1"></a>          <span class="at">R_C =</span> (<span class="dv">1</span> <span class="sc">-</span> s_C0) <span class="sc">*</span> N_C,</span>
+<span id="cb98-13"><a href="#cb98-13" aria-hidden="true" tabindex="-1"></a>          <span class="at">S_H =</span> s_H0 <span class="sc">*</span> N_H, <span class="at">E_H =</span> <span class="dv">0</span>, <span class="at">I_H_pre =</span> <span class="dv">0</span>, <span class="at">I_H_post =</span> <span class="dv">0</span>, <span class="at">Q =</span> <span class="dv">0</span>,</span>
+<span id="cb98-14"><a href="#cb98-14" aria-hidden="true" tabindex="-1"></a>          <span class="at">R_H =</span> (<span class="dv">1</span> <span class="sc">-</span> s_H0) <span class="sc">*</span> N_H,</span>
+<span id="cb98-15"><a href="#cb98-15" aria-hidden="true" tabindex="-1"></a>          <span class="at">cum_onset_C =</span> <span class="dv">0</span>, <span class="at">cum_onset_H =</span> <span class="dv">0</span>, <span class="at">cum_noso =</span> <span class="dv">0</span>,</span>
+<span id="cb98-16"><a href="#cb98-16" aria-hidden="true" tabindex="-1"></a>          <span class="at">cum_adm_rash =</span> <span class="dv">0</span>, <span class="at">cum_inf_C =</span> <span class="dv">0</span>)[state_names]</span>
+<span id="cb98-17"><a href="#cb98-17" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb98-18"><a href="#cb98-18" aria-hidden="true" tabindex="-1"></a>  p <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="at">beta_C =</span> beta_C, <span class="at">beta_H =</span> kappa <span class="sc">*</span> beta_C,</span>
+<span id="cb98-19"><a href="#cb98-19" aria-hidden="true" tabindex="-1"></a>         <span class="at">xi_alpha =</span> xi <span class="sc">*</span> alpha, <span class="at">alpha =</span> alpha, <span class="at">p_a =</span> p_a, <span class="at">p_i =</span> p_i,</span>
+<span id="cb98-20"><a href="#cb98-20" aria-hidden="true" tabindex="-1"></a>         <span class="at">delta =</span> <span class="dv">1</span> <span class="sc">/</span> los, <span class="at">delta_M =</span> delta_M,</span>
+<span id="cb98-21"><a href="#cb98-21" aria-hidden="true" tabindex="-1"></a>         <span class="at">sigma =</span> sigma, <span class="at">eta =</span> eta, <span class="at">gamma =</span> gamma)</span>
+<span id="cb98-22"><a href="#cb98-22" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb98-23"><a href="#cb98-23" aria-hidden="true" tabindex="-1"></a>  sol <span class="ot">&lt;-</span> <span class="fu">ode</span>(y0, <span class="dv">0</span><span class="sc">:</span>max_days, measles_ode, p, <span class="at">method =</span> <span class="st">"lsoda"</span>,</span>
+<span id="cb98-24"><a href="#cb98-24" aria-hidden="true" tabindex="-1"></a>             <span class="at">rootfunc =</span> <span class="fu">make_stop_condition</span>(threshold),</span>
+<span id="cb98-25"><a href="#cb98-25" aria-hidden="true" tabindex="-1"></a>             <span class="at">atol =</span> <span class="fl">1e-3</span>, <span class="at">rtol =</span> <span class="fl">1e-6</span>)</span>
+<span id="cb98-26"><a href="#cb98-26" aria-hidden="true" tabindex="-1"></a>  last <span class="ot">&lt;-</span> <span class="cf">function</span>(x) <span class="fu">unname</span>(sol[<span class="fu">nrow</span>(sol), x])   <span class="co"># value at the stop time</span></span>
+<span id="cb98-27"><a href="#cb98-27" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb98-28"><a href="#cb98-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">total =</span> <span class="fu">last</span>(<span class="st">"cum_inf_C"</span>) <span class="sc">+</span> <span class="fu">last</span>(<span class="st">"cum_noso"</span>),   <span class="co"># infections after the start</span></span>
+<span id="cb98-29"><a href="#cb98-29" aria-hidden="true" tabindex="-1"></a>         <span class="at">noso  =</span> <span class="fu">last</span>(<span class="st">"cum_noso"</span>),</span>
+<span id="cb98-30"><a href="#cb98-30" aria-hidden="true" tabindex="-1"></a>         <span class="at">faded =</span> <span class="fu">last</span>(<span class="st">"time"</span>) <span class="sc">&lt;</span> max_days)</span>
+<span id="cb98-31"><a href="#cb98-31" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb98-32"><a href="#cb98-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb98-33"><a href="#cb98-33" aria-hidden="true" tabindex="-1"></a><span class="do">## total infections for every row of a scenario table (keeps the input columns)</span></span>
+<span id="cb98-34"><a href="#cb98-34" aria-hidden="true" tabindex="-1"></a>run_all <span class="ot">&lt;-</span> <span class="cf">function</span>(scen) <span class="fu">bind_cols</span>(scen, <span class="fu">pmap</span>(scen, total_infections) <span class="sc">|&gt;</span> <span class="fu">list_rbind</span>())</span>
+<span id="cb98-35"><a href="#cb98-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb98-36"><a href="#cb98-36" aria-hidden="true" tabindex="-1"></a><span class="do">## the same population without the hospital: no admissions and no transmission</span></span>
+<span id="cb98-37"><a href="#cb98-37" aria-hidden="true" tabindex="-1"></a><span class="do">## inside. Children with rash stay in the community and transmit like other</span></span>
+<span id="cb98-38"><a href="#cb98-38" aria-hidden="true" tabindex="-1"></a><span class="do">## children with rash, as the model assumes for children who are not admitted.</span></span>
+<span id="cb98-39"><a href="#cb98-39" aria-hidden="true" tabindex="-1"></a><span class="do">## The children who would have been inpatients live in the community, so</span></span>
+<span id="cb98-40"><a href="#cb98-40" aria-hidden="true" tabindex="-1"></a><span class="do">## community immunity becomes the population average (this uses the original</span></span>
+<span id="cb98-41"><a href="#cb98-41" aria-hidden="true" tabindex="-1"></a><span class="do">## adm, so keep it first).</span></span>
+<span id="cb98-42"><a href="#cb98-42" aria-hidden="true" tabindex="-1"></a>no_hospital <span class="ot">&lt;-</span> <span class="cf">function</span>(scen) {</span>
+<span id="cb98-43"><a href="#cb98-43" aria-hidden="true" tabindex="-1"></a>  scen <span class="sc">|&gt;</span></span>
+<span id="cb98-44"><a href="#cb98-44" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">s_C0  =</span> (s_C0 <span class="sc">*</span> (N <span class="sc">-</span> adm <span class="sc">*</span> los) <span class="sc">+</span> s_H0 <span class="sc">*</span> adm <span class="sc">*</span> los) <span class="sc">/</span> N,</span>
+<span id="cb98-45"><a href="#cb98-45" aria-hidden="true" tabindex="-1"></a>           <span class="at">kappa =</span> <span class="dv">0</span>,</span>
+<span id="cb98-46"><a href="#cb98-46" aria-hidden="true" tabindex="-1"></a>           <span class="at">p_a   =</span> <span class="dv">0</span>,</span>
+<span id="cb98-47"><a href="#cb98-47" aria-hidden="true" tabindex="-1"></a>           <span class="at">adm   =</span> <span class="dv">0</span>)   <span class="co"># no admissions, so N_H = adm * los = 0: no hospital</span></span>
+<span id="cb98-48"><a href="#cb98-48" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb98-49"><a href="#cb98-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb98-50"><a href="#cb98-50" aria-hidden="true" tabindex="-1"></a><span class="do">## scenario values shared by both panels</span></span>
+<span id="cb98-51"><a href="#cb98-51" aria-hidden="true" tabindex="-1"></a>los_grid   <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">2</span>, <span class="dv">14</span>, <span class="at">by =</span> <span class="dv">1</span>)          <span class="co"># x-axis: mean length of stay (days)</span></span>
+<span id="cb98-52"><a href="#cb98-52" aria-hidden="true" tabindex="-1"></a>kappa_grid <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">by =</span> <span class="fl">0.1</span>)         <span class="co"># y-axis</span></span>
+<span id="cb98-53"><a href="#cb98-53" aria-hidden="true" tabindex="-1"></a>p_i_values <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.3</span>, <span class="fl">0.5</span>, <span class="fl">0.7</span>, <span class="fl">0.9</span>)  <span class="co"># columns</span></span>
+<span id="cb98-54"><a href="#cb98-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb98-55"><a href="#cb98-55" aria-hidden="true" tabindex="-1"></a><span class="do">## =============================================================================</span></span>
+<span id="cb98-56"><a href="#cb98-56" aria-hidden="true" tabindex="-1"></a><span class="do">## Panel A: the fitted community, across inpatient immunity (about 6 minutes)</span></span>
+<span id="cb98-57"><a href="#cb98-57" aria-hidden="true" tabindex="-1"></a><span class="do">## =============================================================================</span></span>
+<span id="cb98-58"><a href="#cb98-58" aria-hidden="true" tabindex="-1"></a>s_H0_values <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.1</span>, base<span class="sc">$</span>s_H0, <span class="fl">0.4</span>, <span class="fl">0.5</span>, <span class="fl">0.6</span>)   <span class="co"># rows</span></span>
+<span id="cb98-59"><a href="#cb98-59" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb98-60"><a href="#cb98-60" aria-hidden="true" tabindex="-1"></a><span class="co"># ## with the hospital</span></span>
+<span id="cb98-61"><a href="#cb98-61" aria-hidden="true" tabindex="-1"></a><span class="co"># hosp_A &lt;- base |&gt;</span></span>
+<span id="cb98-62"><a href="#cb98-62" aria-hidden="true" tabindex="-1"></a><span class="co">#   select(-kappa, -p_i, -s_H0, -los) |&gt;</span></span>
+<span id="cb98-63"><a href="#cb98-63" aria-hidden="true" tabindex="-1"></a><span class="co">#   expand_grid(s_H0 = s_H0_values, p_i = p_i_values,</span></span>
+<span id="cb98-64"><a href="#cb98-64" aria-hidden="true" tabindex="-1"></a><span class="co">#               los = los_grid, kappa = kappa_grid) |&gt;</span></span>
+<span id="cb98-65"><a href="#cb98-65" aria-hidden="true" tabindex="-1"></a><span class="co">#   run_all()</span></span>
+<span id="cb98-66"><a href="#cb98-66" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb98-67"><a href="#cb98-67" aria-hidden="true" tabindex="-1"></a><span class="co"># ## without the hospital: one run per s_H0 and length of stay, which set how</span></span>
+<span id="cb98-68"><a href="#cb98-68" aria-hidden="true" tabindex="-1"></a><span class="co"># ## many susceptible children the hospital holds (the population average)</span></span>
+<span id="cb98-69"><a href="#cb98-69" aria-hidden="true" tabindex="-1"></a><span class="co"># none_A &lt;- base |&gt;</span></span>
+<span id="cb98-70"><a href="#cb98-70" aria-hidden="true" tabindex="-1"></a><span class="co">#   select(-s_H0, -los) |&gt;</span></span>
+<span id="cb98-71"><a href="#cb98-71" aria-hidden="true" tabindex="-1"></a><span class="co">#   expand_grid(s_H0 = s_H0_values, los = los_grid) |&gt;</span></span>
+<span id="cb98-72"><a href="#cb98-72" aria-hidden="true" tabindex="-1"></a><span class="co">#   no_hospital() |&gt;</span></span>
+<span id="cb98-73"><a href="#cb98-73" aria-hidden="true" tabindex="-1"></a><span class="co">#   run_all() |&gt;</span></span>
+<span id="cb98-74"><a href="#cb98-74" aria-hidden="true" tabindex="-1"></a><span class="co">#   select(s_H0, los, total_none = total, faded_none = faded)</span></span>
+<span id="cb98-75"><a href="#cb98-75" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb98-76"><a href="#cb98-76" aria-hidden="true" tabindex="-1"></a><span class="co"># ## change in total infections: above 0, the hospital amplifies</span></span>
+<span id="cb98-77"><a href="#cb98-77" aria-hidden="true" tabindex="-1"></a><span class="co"># net_A &lt;- hosp_A |&gt;</span></span>
+<span id="cb98-78"><a href="#cb98-78" aria-hidden="true" tabindex="-1"></a><span class="co">#   left_join(none_A, by = c("s_H0", "los")) |&gt;</span></span>
+<span id="cb98-79"><a href="#cb98-79" aria-hidden="true" tabindex="-1"></a><span class="co">#   mutate(net_pct = 100 * (total / total_none - 1),</span></span>
+<span id="cb98-80"><a href="#cb98-80" aria-hidden="true" tabindex="-1"></a><span class="co">#          faded   = faded &amp; faded_none)</span></span>
+<span id="cb98-81"><a href="#cb98-81" aria-hidden="true" tabindex="-1"></a><span class="co"># count(net_A, faded)   # any FALSE: raise max_days</span></span>
+<span id="cb98-82"><a href="#cb98-82" aria-hidden="true" tabindex="-1"></a><span class="co"># saveRDS(net_A, "net_A.rds")</span></span>
+<span id="cb98-83"><a href="#cb98-83" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb98-84"><a href="#cb98-84" aria-hidden="true" tabindex="-1"></a>net_A <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"net_A.rds"</span>)</span>
+<span id="cb98-85"><a href="#cb98-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb98-86"><a href="#cb98-86" aria-hidden="true" tabindex="-1"></a><span class="do">## the fitted hospital over posterior draws</span></span>
+<span id="cb98-87"><a href="#cb98-87" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">20260922</span>)</span>
+<span id="cb98-88"><a href="#cb98-88" aria-hidden="true" tabindex="-1"></a>draws <span class="ot">&lt;-</span> post <span class="sc">|&gt;</span></span>
+<span id="cb98-89"><a href="#cb98-89" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_sample</span>(<span class="at">n =</span> <span class="dv">200</span>) <span class="sc">|&gt;</span></span>
+<span id="cb98-90"><a href="#cb98-90" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(<span class="at">draw =</span> <span class="fu">row_number</span>(), beta_C, kappa, p_a, <span class="at">p_i =</span> p_i_fixed,</span>
+<span id="cb98-91"><a href="#cb98-91" aria-hidden="true" tabindex="-1"></a>            s_C0, s_H0, seed, <span class="at">los =</span> <span class="dv">1</span> <span class="sc">/</span> delta, <span class="at">adm =</span> adm_per_day)</span>
+<span id="cb98-92"><a href="#cb98-92" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb98-93"><a href="#cb98-93" aria-hidden="true" tabindex="-1"></a>post_net <span class="ot">&lt;-</span> <span class="fu">run_all</span>(draws) <span class="sc">|&gt;</span></span>
+<span id="cb98-94"><a href="#cb98-94" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(draw, <span class="at">total_hosp =</span> total, faded) <span class="sc">|&gt;</span></span>
+<span id="cb98-95"><a href="#cb98-95" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(draws <span class="sc">|&gt;</span> <span class="fu">no_hospital</span>() <span class="sc">|&gt;</span> <span class="fu">run_all</span>() <span class="sc">|&gt;</span></span>
+<span id="cb98-96"><a href="#cb98-96" aria-hidden="true" tabindex="-1"></a>              <span class="fu">select</span>(draw, <span class="at">total_none =</span> total, <span class="at">faded_none =</span> faded),</span>
+<span id="cb98-97"><a href="#cb98-97" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="st">"draw"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb98-98"><a href="#cb98-98" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">net_pct =</span> <span class="dv">100</span> <span class="sc">*</span> (total_hosp <span class="sc">/</span> total_none <span class="sc">-</span> <span class="dv">1</span>))</span>
+<span id="cb98-99"><a href="#cb98-99" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb98-100"><a href="#cb98-100" aria-hidden="true" tabindex="-1"></a>post_net <span class="sc">|&gt;</span></span>
+<span id="cb98-101"><a href="#cb98-101" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">all_faded   =</span> <span class="fu">all</span>(faded <span class="sc">&amp;</span> faded_none),</span>
+<span id="cb98-102"><a href="#cb98-102" aria-hidden="true" tabindex="-1"></a>            <span class="at">net_med     =</span> <span class="fu">median</span>(net_pct),</span>
+<span id="cb98-103"><a href="#cb98-103" aria-hidden="true" tabindex="-1"></a>            <span class="at">net_lo      =</span> <span class="fu">quantile</span>(net_pct, <span class="fl">0.025</span>),</span>
+<span id="cb98-104"><a href="#cb98-104" aria-hidden="true" tabindex="-1"></a>            <span class="at">net_hi      =</span> <span class="fu">quantile</span>(net_pct, <span class="fl">0.975</span>),</span>
+<span id="cb98-105"><a href="#cb98-105" aria-hidden="true" tabindex="-1"></a>            <span class="at">p_amplifier =</span> <span class="fu">mean</span>(net_pct <span class="sc">&gt;</span> <span class="dv">0</span>))   <span class="co"># share of draws where the hospital amplifies</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 5
+  all_faded net_med net_lo net_hi p_amplifier
+  &lt;lgl&gt;       &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;       &lt;dbl&gt;
+1 TRUE        -37.1  -39.9  -33.4           0</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb100"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb100-1"><a href="#cb100-1" aria-hidden="true" tabindex="-1"></a><span class="do">## =============================================================================</span></span>
+<span id="cb100-2"><a href="#cb100-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Panel B: one imported case, across community immunity</span></span>
+<span id="cb100-3"><a href="#cb100-3" aria-hidden="true" tabindex="-1"></a><span class="do">## =============================================================================</span></span>
+<span id="cb100-4"><a href="#cb100-4" aria-hidden="true" tabindex="-1"></a>s_C0_values <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.03</span>, <span class="fl">0.04</span>, <span class="fl">0.05</span>, <span class="fl">0.06</span>, <span class="fl">0.07</span>)   <span class="co"># rows</span></span>
+<span id="cb100-5"><a href="#cb100-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-6"><a href="#cb100-6" aria-hidden="true" tabindex="-1"></a><span class="do">## inpatients keep the fitted odds of being susceptible relative to the community</span></span>
+<span id="cb100-7"><a href="#cb100-7" aria-hidden="true" tabindex="-1"></a>xi0 <span class="ot">&lt;-</span> <span class="fu">derived</span>(par_med)<span class="sc">$</span>xi</span>
+<span id="cb100-8"><a href="#cb100-8" aria-hidden="true" tabindex="-1"></a>s_H0_from <span class="ot">&lt;-</span> \(s_C0) xi0 <span class="sc">*</span> s_C0 <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> s_C0 <span class="sc">*</span> (xi0 <span class="sc">-</span> <span class="dv">1</span>))</span>
+<span id="cb100-9"><a href="#cb100-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-10"><a href="#cb100-10" aria-hidden="true" tabindex="-1"></a><span class="do">## one imported case in the community; runs stop when fewer than 0.001 people</span></span>
+<span id="cb100-11"><a href="#cb100-11" aria-hidden="true" tabindex="-1"></a><span class="do">## are infected, so each total is the expected number of infections it causes.</span></span>
+<span id="cb100-12"><a href="#cb100-12" aria-hidden="true" tabindex="-1"></a><span class="do">## s_comm keeps the community value (no_hospital() changes s_C0).</span></span>
+<span id="cb100-13"><a href="#cb100-13" aria-hidden="true" tabindex="-1"></a>imports <span class="ot">&lt;-</span> base <span class="sc">|&gt;</span></span>
+<span id="cb100-14"><a href="#cb100-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>s_C0, <span class="sc">-</span>s_H0, <span class="sc">-</span>kappa, <span class="sc">-</span>p_i, <span class="sc">-</span>los) <span class="sc">|&gt;</span></span>
+<span id="cb100-15"><a href="#cb100-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expand_grid</span>(<span class="at">s_C0 =</span> s_C0_values) <span class="sc">|&gt;</span></span>
+<span id="cb100-16"><a href="#cb100-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">s_H0 =</span> <span class="fu">s_H0_from</span>(s_C0), <span class="at">s_comm =</span> s_C0, <span class="at">seed =</span> <span class="dv">1</span>, <span class="at">threshold =</span> <span class="fl">1e-3</span>)</span>
+<span id="cb100-17"><a href="#cb100-17" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb100-18"><a href="#cb100-18" aria-hidden="true" tabindex="-1"></a><span class="co"># ## with the hospital</span></span>
+<span id="cb100-19"><a href="#cb100-19" aria-hidden="true" tabindex="-1"></a><span class="co"># hosp_B &lt;- imports |&gt;</span></span>
+<span id="cb100-20"><a href="#cb100-20" aria-hidden="true" tabindex="-1"></a><span class="co">#   expand_grid(p_i = p_i_values, los = los_grid, kappa = kappa_grid) |&gt;</span></span>
+<span id="cb100-21"><a href="#cb100-21" aria-hidden="true" tabindex="-1"></a><span class="co">#   run_all()</span></span>
+<span id="cb100-22"><a href="#cb100-22" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb100-23"><a href="#cb100-23" aria-hidden="true" tabindex="-1"></a><span class="co"># ## without the hospital: one run per s_C0 and length of stay</span></span>
+<span id="cb100-24"><a href="#cb100-24" aria-hidden="true" tabindex="-1"></a><span class="co"># none_B &lt;- imports |&gt;</span></span>
+<span id="cb100-25"><a href="#cb100-25" aria-hidden="true" tabindex="-1"></a><span class="co">#   expand_grid(los = los_grid) |&gt;</span></span>
+<span id="cb100-26"><a href="#cb100-26" aria-hidden="true" tabindex="-1"></a><span class="co">#   mutate(p_i = p_i_fixed) |&gt;   # not used without a hospital, but the function needs it</span></span>
+<span id="cb100-27"><a href="#cb100-27" aria-hidden="true" tabindex="-1"></a><span class="co">#   no_hospital() |&gt;</span></span>
+<span id="cb100-28"><a href="#cb100-28" aria-hidden="true" tabindex="-1"></a><span class="co">#   run_all() |&gt;</span></span>
+<span id="cb100-29"><a href="#cb100-29" aria-hidden="true" tabindex="-1"></a><span class="co">#   select(s_comm, los, total_none = total, faded_none = faded)</span></span>
+<span id="cb100-30"><a href="#cb100-30" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb100-31"><a href="#cb100-31" aria-hidden="true" tabindex="-1"></a><span class="co"># net_B &lt;- hosp_B |&gt;</span></span>
+<span id="cb100-32"><a href="#cb100-32" aria-hidden="true" tabindex="-1"></a><span class="co">#   left_join(none_B, by = c("s_comm", "los")) |&gt;</span></span>
+<span id="cb100-33"><a href="#cb100-33" aria-hidden="true" tabindex="-1"></a><span class="co">#   mutate(net_pct = 100 * (total / total_none - 1),</span></span>
+<span id="cb100-34"><a href="#cb100-34" aria-hidden="true" tabindex="-1"></a><span class="co">#          faded   = faded &amp; faded_none)</span></span>
+<span id="cb100-35"><a href="#cb100-35" aria-hidden="true" tabindex="-1"></a><span class="co"># count(net_B, faded)   # a few FALSE near the threshold are expected</span></span>
+<span id="cb100-36"><a href="#cb100-36" aria-hidden="true" tabindex="-1"></a><span class="co"># saveRDS(net_B, "net_B.rds")</span></span>
+<span id="cb100-37"><a href="#cb100-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-38"><a href="#cb100-38" aria-hidden="true" tabindex="-1"></a>net_B <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"net_B.rds"</span>)</span>
+<span id="cb100-39"><a href="#cb100-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-40"><a href="#cb100-40" aria-hidden="true" tabindex="-1"></a><span class="do">## =============================================================================</span></span>
+<span id="cb100-41"><a href="#cb100-41" aria-hidden="true" tabindex="-1"></a><span class="do">## Figure (fast: reload with readRDS() to redraw without rerunning)</span></span>
+<span id="cb100-42"><a href="#cb100-42" aria-hidden="true" tabindex="-1"></a><span class="do">## =============================================================================</span></span>
+<span id="cb100-43"><a href="#cb100-43" aria-hidden="true" tabindex="-1"></a>gsea6 <span class="ot">&lt;-</span> <span class="fu">pal_gsea</span>(<span class="st">"default"</span>, <span class="at">n =</span> <span class="dv">6</span>)(<span class="dv">6</span>)</span>
+<span id="cb100-44"><a href="#cb100-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-45"><a href="#cb100-45" aria-hidden="true" tabindex="-1"></a>brk_net <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">100</span>, <span class="sc">-</span><span class="dv">50</span>, <span class="sc">-</span><span class="dv">20</span>, <span class="dv">0</span>, <span class="dv">20</span>, <span class="dv">50</span>, <span class="cn">Inf</span>)</span>
+<span id="cb100-46"><a href="#cb100-46" aria-hidden="true" tabindex="-1"></a>lab_net <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"-100 to -50%"</span>, <span class="st">"-50 to -20%"</span>, <span class="st">"-20 to 0%"</span>,</span>
+<span id="cb100-47"><a href="#cb100-47" aria-hidden="true" tabindex="-1"></a>             <span class="st">"0 to 20%"</span>, <span class="st">"20 to 50%"</span>, <span class="st">"more than 50%"</span>)</span>
+<span id="cb100-48"><a href="#cb100-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-49"><a href="#cb100-49" aria-hidden="true" tabindex="-1"></a><span class="do">## one heatmap design for both panels: length of stay by kappa, one panel per</span></span>
+<span id="cb100-50"><a href="#cb100-50" aria-hidden="true" tabindex="-1"></a><span class="do">## combination of the row variable and p_i</span></span>
+<span id="cb100-51"><a href="#cb100-51" aria-hidden="true" tabindex="-1"></a>net_heatmap <span class="ot">&lt;-</span> <span class="cf">function</span>(data, facets, labeller, fitted_pt) {</span>
+<span id="cb100-52"><a href="#cb100-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(data, <span class="fu">aes</span>(los, kappa)) <span class="sc">+</span></span>
+<span id="cb100-53"><a href="#cb100-53" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_contour_filled</span>(<span class="fu">aes</span>(<span class="at">z =</span> net_pct), <span class="at">breaks =</span> brk_net, <span class="at">show.legend =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb100-54"><a href="#cb100-54" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_contour</span>(<span class="fu">aes</span>(<span class="at">z =</span> net_pct), <span class="at">breaks =</span> <span class="dv">0</span>, <span class="at">colour =</span> <span class="st">"black"</span>, <span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb100-55"><a href="#cb100-55" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> kappa_ci, <span class="at">colour =</span> <span class="st">"grey30"</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>,</span>
+<span id="cb100-56"><a href="#cb100-56" aria-hidden="true" tabindex="-1"></a>               <span class="at">linewidth =</span> <span class="fl">0.4</span>) <span class="sc">+</span></span>
+<span id="cb100-57"><a href="#cb100-57" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="at">data =</span> fitted_pt, <span class="at">shape =</span> <span class="dv">21</span>, <span class="at">fill =</span> <span class="st">"white"</span>, <span class="at">colour =</span> <span class="st">"black"</span>,</span>
+<span id="cb100-58"><a href="#cb100-58" aria-hidden="true" tabindex="-1"></a>               <span class="at">size =</span> <span class="fl">2.2</span>, <span class="at">stroke =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb100-59"><a href="#cb100-59" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> gsea6, <span class="at">labels =</span> lab_net, <span class="at">drop =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb100-60"><a href="#cb100-60" aria-hidden="true" tabindex="-1"></a>                      <span class="at">name =</span> <span class="st">"Change in total infections with the hospital"</span>) <span class="sc">+</span></span>
+<span id="cb100-61"><a href="#cb100-61" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">4</span>, <span class="dv">8</span>, <span class="dv">12</span>), <span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)) <span class="sc">+</span></span>
+<span id="cb100-62"><a href="#cb100-62" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_y_continuous</span>(<span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">1</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"0"</span>, <span class="st">"0.5"</span>, <span class="st">"1"</span>),</span>
+<span id="cb100-63"><a href="#cb100-63" aria-hidden="true" tabindex="-1"></a>                       <span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)) <span class="sc">+</span></span>
+<span id="cb100-64"><a href="#cb100-64" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_grid</span>(facets, <span class="at">labeller =</span> labeller) <span class="sc">+</span></span>
+<span id="cb100-65"><a href="#cb100-65" aria-hidden="true" tabindex="-1"></a>    <span class="fu">guides</span>(<span class="at">fill =</span> <span class="fu">guide_legend</span>(<span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">byrow =</span> <span class="cn">TRUE</span>, <span class="at">title.position =</span> <span class="st">"top"</span>)) <span class="sc">+</span></span>
+<span id="cb100-66"><a href="#cb100-66" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Mean length of stay (days)"</span>, <span class="at">y =</span> <span class="fu">expression</span>(kappa)) <span class="sc">+</span></span>
+<span id="cb100-67"><a href="#cb100-67" aria-hidden="true" tabindex="-1"></a>    theme_thesis <span class="sc">+</span></span>
+<span id="cb100-68"><a href="#cb100-68" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme</span>(<span class="at">panel.spacing =</span> <span class="fu">unit</span>(<span class="dv">3</span>, <span class="st">"mm"</span>),</span>
+<span id="cb100-69"><a href="#cb100-69" aria-hidden="true" tabindex="-1"></a>          <span class="at">strip.background =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb100-70"><a href="#cb100-70" aria-hidden="true" tabindex="-1"></a>          <span class="at">strip.text.y =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">0</span>),</span>
+<span id="cb100-71"><a href="#cb100-71" aria-hidden="true" tabindex="-1"></a>          <span class="at">axis.title.y =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">0</span>, <span class="at">vjust =</span> <span class="fl">0.5</span>),</span>
+<span id="cb100-72"><a href="#cb100-72" aria-hidden="true" tabindex="-1"></a>          <span class="at">legend.text =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="dv">0</span>))</span>
+<span id="cb100-73"><a href="#cb100-73" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb100-74"><a href="#cb100-74" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-75"><a href="#cb100-75" aria-hidden="true" tabindex="-1"></a><span class="do">## A: the fitted hospital sits in the panel with the fitted s_H0 and p_i</span></span>
+<span id="cb100-76"><a href="#cb100-76" aria-hidden="true" tabindex="-1"></a>fig_A <span class="ot">&lt;-</span> <span class="fu">net_heatmap</span>(</span>
+<span id="cb100-77"><a href="#cb100-77" aria-hidden="true" tabindex="-1"></a>  net_A, s_H0 <span class="sc">~</span> p_i,</span>
+<span id="cb100-78"><a href="#cb100-78" aria-hidden="true" tabindex="-1"></a>  <span class="fu">label_bquote</span>(<span class="at">rows =</span> s[H0] <span class="sc">==</span> .(<span class="fu">round</span>(s_H0, <span class="dv">2</span>)), <span class="at">cols =</span> p[i] <span class="sc">==</span> .(p_i)),</span>
+<span id="cb100-79"><a href="#cb100-79" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">los =</span> <span class="dv">1</span> <span class="sc">/</span> delta, <span class="at">kappa =</span> base<span class="sc">$</span>kappa, <span class="at">s_H0 =</span> base<span class="sc">$</span>s_H0, <span class="at">p_i =</span> p_i_fixed)</span>
+<span id="cb100-80"><a href="#cb100-80" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb100-81"><a href="#cb100-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-82"><a href="#cb100-82" aria-hidden="true" tabindex="-1"></a><span class="do">## B: the fitted hospital appears in every row of its p_i column</span></span>
+<span id="cb100-83"><a href="#cb100-83" aria-hidden="true" tabindex="-1"></a>fig_B <span class="ot">&lt;-</span> <span class="fu">net_heatmap</span>(</span>
+<span id="cb100-84"><a href="#cb100-84" aria-hidden="true" tabindex="-1"></a>  net_B, s_comm <span class="sc">~</span> p_i,</span>
+<span id="cb100-85"><a href="#cb100-85" aria-hidden="true" tabindex="-1"></a>  <span class="fu">label_bquote</span>(<span class="at">rows =</span> <span class="fu">list</span>(s[C0] <span class="sc">==</span> .(s_comm), s[H0] <span class="sc">==</span> .(<span class="fu">round</span>(<span class="fu">s_H0_from</span>(s_comm), <span class="dv">2</span>))),</span>
+<span id="cb100-86"><a href="#cb100-86" aria-hidden="true" tabindex="-1"></a>               <span class="at">cols =</span> p[i] <span class="sc">==</span> .(p_i)),</span>
+<span id="cb100-87"><a href="#cb100-87" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">los =</span> <span class="dv">1</span> <span class="sc">/</span> delta, <span class="at">kappa =</span> base<span class="sc">$</span>kappa, <span class="at">p_i =</span> p_i_fixed)</span>
+<span id="cb100-88"><a href="#cb100-88" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb100-89"><a href="#cb100-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-90"><a href="#cb100-90" aria-hidden="true" tabindex="-1"></a>fig_amp <span class="ot">&lt;-</span> fig_A <span class="sc">/</span> fig_B <span class="sc">+</span></span>
+<span id="cb100-91"><a href="#cb100-91" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_layout</span>(<span class="at">guides =</span> <span class="st">"collect"</span>) <span class="sc">+</span></span>
+<span id="cb100-92"><a href="#cb100-92" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plot_annotation</span>(<span class="at">tag_levels =</span> <span class="st">"A"</span>) <span class="sc">&amp;</span></span>
+<span id="cb100-93"><a href="#cb100-93" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>,</span>
+<span id="cb100-94"><a href="#cb100-94" aria-hidden="true" tabindex="-1"></a>        <span class="at">plot.tag =</span> <span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="dv">14</span>))</span>
+<span id="cb100-95"><a href="#cb100-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb100-96"><a href="#cb100-96" aria-hidden="true" tabindex="-1"></a>fig_amp</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `stat_contour()`: Zero contours were generated</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in min(x): no non-missing arguments to min; returning Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in max(x): no non-missing arguments to max; returning -Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `stat_contour()`: Zero contours were generated</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in min(x): no non-missing arguments to min; returning Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in max(x): no non-missing arguments to max; returning -Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `stat_contour()`: Zero contours were generated</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in min(x): no non-missing arguments to min; returning Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in max(x): no non-missing arguments to max; returning -Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `stat_contour()`: Zero contours were generated</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in min(x): no non-missing arguments to min; returning Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in max(x): no non-missing arguments to max; returning -Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `stat_contour()`: Zero contours were generated</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in min(x): no non-missing arguments to min; returning Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in max(x): no non-missing arguments to max; returning -Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `stat_contour()`: Zero contours were generated</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in min(x): no non-missing arguments to min; returning Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in max(x): no non-missing arguments to max; returning -Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `stat_contour()`: Zero contours were generated</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in min(x): no non-missing arguments to min; returning Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in max(x): no non-missing arguments to max; returning -Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `stat_contour()`: Zero contours were generated</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in min(x): no non-missing arguments to min; returning Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in max(x): no non-missing arguments to max; returning -Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `stat_contour()`: Zero contours were generated</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in min(x): no non-missing arguments to min; returning Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in max(x): no non-missing arguments to max; returning -Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `stat_contour()`: Zero contours were generated</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in min(x): no non-missing arguments to min; returning Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in max(x): no non-missing arguments to max; returning -Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `stat_contour()`: Zero contours were generated</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in min(x): no non-missing arguments to min; returning Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in max(x): no non-missing arguments to max; returning -Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: `stat_contour()`: Zero contours were generated</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in min(x): no non-missing arguments to min; returning Inf</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in max(x): no non-missing arguments to max; returning -Inf</code></pre>
+</div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -2413,7 +2715,229 @@ Infections per infectious child, kappa x S                 0.88 (95% CrI 0.063 t
 </figure>
 </div>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb99"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ggsave("figs/chap3/sc_sh.png", width = 4, height = 3, dpi = 300, bg = "white")</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb137"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb137-1"><a href="#cb137-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ggsave("figs/chap3/amplifier.png", fig_amp, width = 5, height = 8,</span></span>
+<span id="cb137-2"><a href="#cb137-2" aria-hidden="true" tabindex="-1"></a><span class="co">#        dpi = 300, bg = "white")</span></span>
+<span id="cb137-3"><a href="#cb137-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb137-4"><a href="#cb137-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb137-5"><a href="#cb137-5" aria-hidden="true" tabindex="-1"></a><span class="do">## ---- 1. the fitted hospital, over posterior draws (panel A) --------------------</span></span>
+<span id="cb137-6"><a href="#cb137-6" aria-hidden="true" tabindex="-1"></a>post_net <span class="sc">|&gt;</span></span>
+<span id="cb137-7"><a href="#cb137-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">net_med     =</span> <span class="fu">median</span>(net_pct),</span>
+<span id="cb137-8"><a href="#cb137-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">net_lo      =</span> <span class="fu">quantile</span>(net_pct, <span class="fl">0.025</span>),</span>
+<span id="cb137-9"><a href="#cb137-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">net_hi      =</span> <span class="fu">quantile</span>(net_pct, <span class="fl">0.975</span>),</span>
+<span id="cb137-10"><a href="#cb137-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">p_amplifier =</span> <span class="fu">mean</span>(net_pct <span class="sc">&gt;</span> <span class="dv">0</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 4
+  net_med net_lo net_hi p_amplifier
+    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;       &lt;dbl&gt;
+1   -37.1  -39.9  -33.4           0</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb139"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb139-1"><a href="#cb139-1" aria-hidden="true" tabindex="-1"></a><span class="do">## ---- 2. kappa above which the hospital amplifies (the black line) ---------------</span></span>
+<span id="cb139-2"><a href="#cb139-2" aria-hidden="true" tabindex="-1"></a><span class="do">## linear interpolation between the last kappa below 0% and the first at or above;</span></span>
+<span id="cb139-3"><a href="#cb139-3" aria-hidden="true" tabindex="-1"></a><span class="do">## NA means the hospital does not amplify for any kappa up to 1</span></span>
+<span id="cb139-4"><a href="#cb139-4" aria-hidden="true" tabindex="-1"></a>kappa_amp <span class="ot">&lt;-</span> <span class="cf">function</span>(kappa, net) {</span>
+<span id="cb139-5"><a href="#cb139-5" aria-hidden="true" tabindex="-1"></a>  i <span class="ot">&lt;-</span> <span class="fu">which</span>(net <span class="sc">&gt;=</span> <span class="dv">0</span>)[<span class="dv">1</span>]</span>
+<span id="cb139-6"><a href="#cb139-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.na</span>(i)) <span class="fu">return</span>(<span class="cn">NA_real_</span>)</span>
+<span id="cb139-7"><a href="#cb139-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (i <span class="sc">==</span> <span class="dv">1</span>) <span class="fu">return</span>(kappa[<span class="dv">1</span>])</span>
+<span id="cb139-8"><a href="#cb139-8" aria-hidden="true" tabindex="-1"></a>  kappa[i <span class="sc">-</span> <span class="dv">1</span>] <span class="sc">+</span> (<span class="dv">0</span> <span class="sc">-</span> net[i <span class="sc">-</span> <span class="dv">1</span>]) <span class="sc">*</span> (kappa[i] <span class="sc">-</span> kappa[i <span class="sc">-</span> <span class="dv">1</span>]) <span class="sc">/</span> (net[i] <span class="sc">-</span> net[i <span class="sc">-</span> <span class="dv">1</span>])</span>
+<span id="cb139-9"><a href="#cb139-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb139-10"><a href="#cb139-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb139-11"><a href="#cb139-11" aria-hidden="true" tabindex="-1"></a>thr_A <span class="ot">&lt;-</span> net_A <span class="sc">|&gt;</span></span>
+<span id="cb139-12"><a href="#cb139-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(s_H0, p_i, los, kappa) <span class="sc">|&gt;</span></span>
+<span id="cb139-13"><a href="#cb139-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(<span class="at">s_H0 =</span> <span class="fu">round</span>(s_H0, <span class="dv">2</span>), p_i, los) <span class="sc">|&gt;</span></span>
+<span id="cb139-14"><a href="#cb139-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">kappa_amp =</span> <span class="fu">kappa_amp</span>(kappa, net_pct), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb139-15"><a href="#cb139-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb139-16"><a href="#cb139-16" aria-hidden="true" tabindex="-1"></a>thr_B <span class="ot">&lt;-</span> net_B <span class="sc">|&gt;</span></span>
+<span id="cb139-17"><a href="#cb139-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(s_comm, p_i, los, kappa) <span class="sc">|&gt;</span></span>
+<span id="cb139-18"><a href="#cb139-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(<span class="at">s_C0 =</span> s_comm, p_i, los) <span class="sc">|&gt;</span></span>
+<span id="cb139-19"><a href="#cb139-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">kappa_amp =</span> <span class="fu">kappa_amp</span>(kappa, net_pct), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb139-20"><a href="#cb139-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb139-21"><a href="#cb139-21" aria-hidden="true" tabindex="-1"></a><span class="do">## thresholds at mean stays of 2, 5 and 14 days (columns los_2, los_5, los_14)</span></span>
+<span id="cb139-22"><a href="#cb139-22" aria-hidden="true" tabindex="-1"></a>thr_A <span class="sc">|&gt;</span></span>
+<span id="cb139-23"><a href="#cb139-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(los <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">14</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb139-24"><a href="#cb139-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> los, <span class="at">values_from =</span> kappa_amp, <span class="at">names_prefix =</span> <span class="st">"los_"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb139-25"><a href="#cb139-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(<span class="at">n =</span> <span class="cn">Inf</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 25 × 5
+    s_H0   p_i  los_2  los_5 los_14
+   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+ 1  0.1    0.1 NA     NA     NA    
+ 2  0.1    0.3 NA     NA     NA    
+ 3  0.1    0.5 NA     NA     NA    
+ 4  0.1    0.7 NA     NA     NA    
+ 5  0.1    0.9 NA     NA     NA    
+ 6  0.28   0.1 NA      0.941  0.736
+ 7  0.28   0.3 NA     NA      0.854
+ 8  0.28   0.5 NA     NA     NA    
+ 9  0.28   0.7 NA     NA     NA    
+10  0.28   0.9 NA     NA     NA    
+11  0.4    0.1  0.696  0.593  0.474
+12  0.4    0.3  0.869  0.718  0.549
+13  0.4    0.5 NA      0.909  0.653
+14  0.4    0.7 NA     NA      0.804
+15  0.4    0.9 NA     NA     NA    
+16  0.5    0.1  0.494  0.425  0.346
+17  0.5    0.3  0.614  0.511  0.395
+18  0.5    0.5  0.813  0.646  0.472
+19  0.5    0.7 NA      0.882  0.581
+20  0.5    0.9 NA     NA      0.762
+21  0.6    0.1  0.364  0.312  0.260
+22  0.6    0.3  0.449  0.374  0.293
+23  0.6    0.5  0.590  0.471  0.353
+24  0.6    0.7  0.876  0.642  0.433
+25  0.6    0.9 NA     NA      0.565</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb141"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb141-1"><a href="#cb141-1" aria-hidden="true" tabindex="-1"></a>thr_B <span class="sc">|&gt;</span></span>
+<span id="cb141-2"><a href="#cb141-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(los <span class="sc">%in%</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">14</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb141-3"><a href="#cb141-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> los, <span class="at">values_from =</span> kappa_amp, <span class="at">names_prefix =</span> <span class="st">"los_"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb141-4"><a href="#cb141-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(<span class="at">n =</span> <span class="cn">Inf</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 25 × 5
+    s_C0   p_i  los_2  los_5 los_14
+   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+ 1  0.03   0.1  0.275  0.275  0.278
+ 2  0.03   0.3  0.351  0.345  0.337
+ 3  0.03   0.5  0.488  0.467  0.434
+ 4  0.03   0.7  0.787  0.713  0.610
+ 5  0.03   0.9 NA     NA     NA    
+ 6  0.04   0.1  0.280  0.279  0.277
+ 7  0.04   0.3  0.354  0.344  0.323
+ 8  0.04   0.5  0.500  0.466  0.415
+ 9  0.04   0.7  0.800  0.703  0.566
+10  0.04   0.9 NA     NA      0.854
+11  0.05   0.1  0.301  0.300  0.305
+12  0.05   0.3  0.384  0.376  0.369
+13  0.05   0.5  0.523  0.490  0.452
+14  0.05   0.7  0.827  0.716  0.584
+15  0.05   0.9 NA     NA      0.841
+16  0.06   0.1  0.458  0.440  0.425
+17  0.06   0.3  0.566  0.536  0.499
+18  0.06   0.5  0.753  0.691  0.606
+19  0.06   0.7 NA      0.989  0.773
+20  0.06   0.9 NA     NA     NA    
+21  0.07   0.1  0.736  0.663  0.561
+22  0.07   0.3  0.917  0.806  0.654
+23  0.07   0.5 NA     NA      0.784
+24  0.07   0.7 NA     NA      0.981
+25  0.07   0.9 NA     NA     NA    </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb143"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb143-1"><a href="#cb143-1" aria-hidden="true" tabindex="-1"></a><span class="do">## ---- 3. panel A: the change when s_H0 = 0.1 ----------------------------------------</span></span>
+<span id="cb143-2"><a href="#cb143-2" aria-hidden="true" tabindex="-1"></a>net_A <span class="sc">|&gt;</span></span>
+<span id="cb143-3"><a href="#cb143-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">near</span>(s_H0, <span class="fl">0.1</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb143-4"><a href="#cb143-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">min =</span> <span class="fu">min</span>(net_pct), <span class="at">max =</span> <span class="fu">max</span>(net_pct))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+    min   max
+  &lt;dbl&gt; &lt;dbl&gt;
+1 -42.4 -25.3</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb145"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb145-1"><a href="#cb145-1" aria-hidden="true" tabindex="-1"></a><span class="do">## ---- 4. panel B: the absolute numbers behind the percentages --------------------</span></span>
+<span id="cb145-2"><a href="#cb145-2" aria-hidden="true" tabindex="-1"></a>net_B <span class="sc">|&gt;</span></span>
+<span id="cb145-3"><a href="#cb145-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(los <span class="sc">==</span> <span class="dv">5</span>, <span class="fu">near</span>(kappa, <span class="fl">0.3</span>) <span class="sc">|</span> <span class="fu">near</span>(kappa, <span class="fl">0.5</span>) <span class="sc">|</span> <span class="fu">near</span>(kappa, <span class="fl">0.7</span>),</span>
+<span id="cb145-4"><a href="#cb145-4" aria-hidden="true" tabindex="-1"></a>         p_i <span class="sc">%in%</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.3</span>, <span class="fl">0.5</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb145-5"><a href="#cb145-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="at">s_C0 =</span> s_comm, p_i, kappa, <span class="at">with_hospital =</span> total,</span>
+<span id="cb145-6"><a href="#cb145-6" aria-hidden="true" tabindex="-1"></a>         <span class="at">no_hospital =</span> total_none, net_pct) <span class="sc">|&gt;</span></span>
+<span id="cb145-7"><a href="#cb145-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(s_C0, p_i, kappa) <span class="sc">|&gt;</span></span>
+<span id="cb145-8"><a href="#cb145-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(<span class="at">n =</span> <span class="cn">Inf</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 45 × 6
+    s_C0   p_i kappa with_hospital no_hospital    net_pct
+   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;         &lt;dbl&gt;       &lt;dbl&gt;      &lt;dbl&gt;
+ 1  0.03   0.1   0.3          1.87        1.76      6.53 
+ 2  0.03   0.1   0.5          4.11        1.76    134.   
+ 3  0.03   0.1   0.7         88.7         1.76   4951.   
+ 4  0.03   0.3   0.3          1.56        1.76    -11.0  
+ 5  0.03   0.3   0.5          2.65        1.76     51.0  
+ 6  0.03   0.3   0.7          6.41        1.76    265.   
+ 7  0.03   0.5   0.3          1.32        1.76    -24.9  
+ 8  0.03   0.5   0.5          1.86        1.76      5.87 
+ 9  0.03   0.5   0.7          2.94        1.76     67.4  
+10  0.04   0.1   0.3          6.24        5.64     10.6  
+11  0.04   0.1   0.5       5976.          5.64 105847.   
+12  0.04   0.1   0.7      15520.          5.64 275043.   
+13  0.04   0.3   0.3          4.18        5.64    -25.8  
+14  0.04   0.3   0.5         29.8         5.64    429.   
+15  0.04   0.3   0.7      10224.          5.64 181154.   
+16  0.04   0.5   0.3          3.06        5.64    -45.8  
+17  0.04   0.5   0.5          6.42        5.64     13.8  
+18  0.04   0.5   0.7        649.          5.64  11405.   
+19  0.05   0.1   0.3       7941.       7969.       -0.354
+20  0.05   0.1   0.5      21391.       7969.      168.   
+21  0.05   0.1   0.7      29464.       7969.      270.   
+22  0.05   0.3   0.3        496.       7969.      -93.8  
+23  0.05   0.3   0.5      16494.       7969.      107.   
+24  0.05   0.3   0.7      24634.       7969.      209.   
+25  0.05   0.5   0.3         14.7      7969.      -99.8  
+26  0.05   0.5   0.5       8742.       7969.        9.70 
+27  0.05   0.5   0.7      18432.       7969.      131.   
+28  0.06   0.1   0.3      26054.      33205.      -21.5  
+29  0.06   0.1   0.5      35812.      33205.        7.85 
+30  0.06   0.1   0.7      43370.      33205.       30.6  
+31  0.06   0.3   0.3      21934.      33205.      -33.9  
+32  0.06   0.3   0.5      31935.      33205.       -3.83 
+33  0.06   0.3   0.7      38739.      33205.       16.7  
+34  0.06   0.5   0.3      15902.      33205.      -52.1  
+35  0.06   0.5   0.5      26857.      33205.      -19.1  
+36  0.06   0.5   0.7      33476.      33205.        0.813
+37  0.07   0.1   0.3      42879.      55994.      -23.4  
+38  0.07   0.1   0.5      50414.      55994.       -9.97 
+39  0.07   0.1   0.7      57295.      55994.        2.32 
+40  0.07   0.3   0.3      40224.      55994.      -28.2  
+41  0.07   0.3   0.5      47380.      55994.      -15.4  
+42  0.07   0.3   0.7      52981.      55994.       -5.38 
+43  0.07   0.5   0.3      36553.      55994.      -34.7  
+44  0.07   0.5   0.5      43762.      55994.      -21.8  
+45  0.07   0.5   0.7      48659.      55994.      -13.1  </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb147"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb147-1"><a href="#cb147-1" aria-hidden="true" tabindex="-1"></a><span class="do">## ---- 5. panel B: the fitted hospital (white points), at the fitted stay ---------</span></span>
+<span id="cb147-2"><a href="#cb147-2" aria-hidden="true" tabindex="-1"></a>fitted_B <span class="ot">&lt;-</span> imports <span class="sc">|&gt;</span></span>
+<span id="cb147-3"><a href="#cb147-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">kappa =</span> base<span class="sc">$</span>kappa, <span class="at">p_i =</span> p_i_fixed, <span class="at">los =</span> <span class="dv">1</span> <span class="sc">/</span> delta) <span class="sc">|&gt;</span></span>
+<span id="cb147-4"><a href="#cb147-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">run_all</span>() <span class="sc">|&gt;</span></span>
+<span id="cb147-5"><a href="#cb147-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="at">s_C0 =</span> s_comm, <span class="at">with_hospital =</span> total) <span class="sc">|&gt;</span></span>
+<span id="cb147-6"><a href="#cb147-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(imports <span class="sc">|&gt;</span></span>
+<span id="cb147-7"><a href="#cb147-7" aria-hidden="true" tabindex="-1"></a>              <span class="fu">mutate</span>(<span class="at">p_i =</span> p_i_fixed, <span class="at">los =</span> <span class="dv">1</span> <span class="sc">/</span> delta) <span class="sc">|&gt;</span></span>
+<span id="cb147-8"><a href="#cb147-8" aria-hidden="true" tabindex="-1"></a>              <span class="fu">no_hospital</span>() <span class="sc">|&gt;</span></span>
+<span id="cb147-9"><a href="#cb147-9" aria-hidden="true" tabindex="-1"></a>              <span class="fu">run_all</span>() <span class="sc">|&gt;</span></span>
+<span id="cb147-10"><a href="#cb147-10" aria-hidden="true" tabindex="-1"></a>              <span class="fu">select</span>(<span class="at">s_C0 =</span> s_comm, <span class="at">no_hospital =</span> total),</span>
+<span id="cb147-11"><a href="#cb147-11" aria-hidden="true" tabindex="-1"></a>            <span class="at">by =</span> <span class="st">"s_C0"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb147-12"><a href="#cb147-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">net_pct =</span> <span class="dv">100</span> <span class="sc">*</span> (with_hospital <span class="sc">/</span> no_hospital <span class="sc">-</span> <span class="dv">1</span>))</span>
+<span id="cb147-13"><a href="#cb147-13" aria-hidden="true" tabindex="-1"></a>fitted_B</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 5 × 4
+   s_C0 with_hospital no_hospital net_pct
+  &lt;dbl&gt;         &lt;dbl&gt;       &lt;dbl&gt;   &lt;dbl&gt;
+1  0.03         0.949        1.76   -46.0
+2  0.04         1.84         5.65   -67.4
+3  0.05         4.24      7995.     -99.9
+4  0.06        31.5      33233.     -99.9
+5  0.07     21565.       56022.     -61.5</code></pre>
+</div>
+</div>
+</section>
+<section id="relationship-between-s_h-and-s_c" class="level2">
+<h2 class="anchored" data-anchor-id="relationship-between-s_h-and-s_c">Relationship between <span class="math inline">\(s_H\)</span> and <span class="math inline">\(s_C\)</span></h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb149"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb149-1"><a href="#cb149-1" aria-hidden="true" tabindex="-1"></a>df_plot <span class="ot">&lt;-</span> <span class="fu">expand_grid</span>(<span class="at">s_C =</span> <span class="fu">seq</span>(<span class="fl">0.0</span>, <span class="fl">0.15</span>, <span class="fl">0.01</span>), <span class="at">xi =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">8</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb149-2"><a href="#cb149-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">s_H =</span> xi <span class="sc">*</span> s_C <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> s_C <span class="sc">*</span> (xi <span class="sc">-</span> <span class="dv">1</span>)))</span>
+<span id="cb149-3"><a href="#cb149-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb149-4"><a href="#cb149-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(df_plot, <span class="fu">aes</span>(<span class="at">x =</span> s_C, <span class="at">y =</span> s_H, <span class="at">colour =</span> <span class="fu">factor</span>(xi))) <span class="sc">+</span></span>
+<span id="cb149-5"><a href="#cb149-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb149-6"><a href="#cb149-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">slope =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"grey"</span>) <span class="sc">+</span></span>
+<span id="cb149-7"><a href="#cb149-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="fl">0.6</span>, <span class="fl">0.05</span>)) <span class="sc">+</span></span>
+<span id="cb149-8"><a href="#cb149-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb149-9"><a href="#cb149-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">expression</span>(<span class="st">"community susceptible"</span> <span class="sc">~</span> <span class="fu">italic</span>(s)[C]),</span>
+<span id="cb149-10"><a href="#cb149-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="fu">expression</span>(<span class="st">"hospital susceptible"</span> <span class="sc">~</span> <span class="fu">italic</span>(s)[H]),</span>
+<span id="cb149-11"><a href="#cb149-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">colour =</span> <span class="fu">expression</span>(xi)</span>
+<span id="cb149-12"><a href="#cb149-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb149-13"><a href="#cb149-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_nejm</span>(<span class="at">guide =</span> <span class="fu">guide_legend</span>(<span class="at">reverse =</span> <span class="cn">TRUE</span>)) <span class="sc">+</span></span>
+<span id="cb149-14"><a href="#cb149-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="03_res3_files/figure-html/unnamed-chunk-44-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb150"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb150-1"><a href="#cb150-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ggsave("figs/chap3/sc_sh.png", width = 4, height = 3, dpi = 300, bg = "white")</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 
 
