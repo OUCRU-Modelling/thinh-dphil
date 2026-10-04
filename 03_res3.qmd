@@ -299,17 +299,24 @@ init_state <- function(s_C0, s_H0, seed) {
 derived <- function(par) {
   s_C0 <- par[["s_C0"]]
   s_H0 <- par[["s_H0"]]
-
+  
   xi       <- (s_H0 * (1 - s_C0)) / (s_C0 * (1 - s_H0))
   alpha    <- alpha_bar / (1 + s_C0 * (xi - 1))
   xi_alpha <- xi * alpha
-
-  D_inf  <- 1 / (eta + xi_alpha) +
-            (eta / (eta + xi_alpha)) * (1 - par[["p_a"]]) / gamma
+  
+  a_C    <- (sigma + delta) / (sigma + xi_alpha + delta)
+  D_inf  <- (1 + eta * (1 - par[["p_a"]]) / gamma) *
+    (delta + eta * a_C) / (eta * (eta + xi_alpha + delta))
   beta_C <- par[["R_eff"]] / (D_inf * s_C0)
-
-  list(xi = xi, alpha = alpha, xi_alpha = xi_alpha, D_inf = D_inf,
-       beta_C = beta_C, beta_H = par[["kappa"]] * beta_C)
+  
+  list(
+    xi = xi,
+    alpha = alpha,
+    xi_alpha = xi_alpha,
+    D_inf = D_inf,
+    beta_C = beta_C,
+    beta_H = par[["kappa"]] * beta_C
+  )
 }
 
 make_params <- function(par, d) {
@@ -367,6 +374,204 @@ run_model <- function(par, n_weeks, full = FALSE) {
                                    "I_H_post", "Q", "R_H")])
   )
 }
+```
+
+## R0H and R0C validation
+
+The simulation set everyone in the population susceptible, and introduce 1 infectious in the pre-rash state in the community (to check R0C), or hospital (to check R0H).
+
+```{r}
+## ---- closed forms from the next-generation matrix ----------------------------
+r0h_formula <- function(beta_H,
+                        eta,
+                        gamma,
+                        delta,
+                        xi_alpha,
+                        p_a,
+                        p_i) {
+  k <- eta + xi_alpha + delta
+  beta_H * ((eta + xi_alpha) / (eta * k) +
+              (1 - p_i) / gamma * (eta + xi_alpha + p_a * delta) / k)
+}
+
+r0c_formula <- function(beta_C, eta, gamma, delta, xi_alpha, p_a) {
+  k <- eta + xi_alpha + delta
+  beta_C * (eta + delta) / k * (1 / eta + (1 - p_a) / gamma)
+}
+
+## ---- the same quantities from the model ODE -----------------------------------
+## seed_in: compartment of the index child ("I_H_pre" or "I_C_pre")
+## count:   which infections to count ("cum_noso" or "cum_inf_C")
+## Everyone is susceptible, so S_C = N_C and S_H = N_H at the start.
+simulate_new_infections <- function(beta_C,
+                                    beta_H,
+                                    eta,
+                                    gamma,
+                                    delta,
+                                    xi_alpha,
+                                    p_a,
+                                    p_i,
+                                    N_C,
+                                    N_H,
+                                    seed_in,
+                                    count) {
+  y0 <- c(
+    S_C = N_C,
+    E_C = 0,
+    I_C_pre = 0,
+    I_C_post = 0,
+    R_C = 0,
+    S_H = N_H,
+    E_H = 0,
+    I_H_pre = 0,
+    I_H_post = 0,
+    Q = 0,
+    R_H = 0,
+    cum_onset_C = 0,
+    cum_onset_H = 0,
+    cum_noso = 0,
+    cum_adm_rash = 0,
+    cum_inf_C = 0
+  )[state_names]
+  y0[seed_in] <- 1   # one infectious child
+  
+  p <- c(
+    beta_C = beta_C,
+    beta_H = beta_H,
+    xi_alpha = xi_alpha,
+    alpha = 0,
+    p_a = p_a,
+    p_i = p_i,
+    sigma = 0,
+    eta = eta,
+    gamma = gamma,
+    delta = delta,
+    delta_M = 1 / 7
+  )
+  
+  ## long enough for the index child to finish its infectious period
+  t_end <- 50 / min(eta, gamma)
+  
+  out <- ode(y0,
+             c(0, t_end),
+             measles_ode,
+             p,
+             rtol = 1e-10,
+             atol = 1e-10)
+  out[2, count]
+}
+
+## ---- parameter sets -------------------------------------------------------------
+## 1. the baseline values
+baseline <- tibble(
+  beta_C = 15 / 8,
+  beta_H = 15 / 8,
+  eta = 1 / 4,
+  gamma = 1 / 4,
+  delta = 1 / 5.2,
+  xi_alpha = 0.001,
+  p_a = 0.3,
+  p_i = 0.9
+)
+
+## 2. the baseline with p_a and p_i at their limits (0 or 1)
+edges <- baseline |>
+  select(-p_a, -p_i) |>
+  expand_grid(p_a = c(0, 1), p_i = c(0, 1))
+
+## 3. random values over wide ranges
+set.seed(2026)
+n_random <- 200
+random <- tibble(
+  beta_C   = runif(n_random, 0.5, 5),
+  beta_H   = runif(n_random, 0.1, 10),
+  eta      = 1 / runif(n_random, 1, 7),
+  # pre-rash infectious period, 1 to 7 days
+  gamma    = 1 / runif(n_random, 1, 7),
+  # post-rash infectious period, 1 to 7 days
+  delta    = 1 / runif(n_random, 1, 30),
+  # length of stay, 1 to 30 days
+  xi_alpha = runif(n_random, 0.001, 0.01),
+  p_a      = runif(n_random),
+  p_i      = runif(n_random)
+)
+
+## population sizes
+## N_C is very large, so that the infections caused by one child do not reduce
+## the susceptible proportion. R_0H and R_0C do not depend on N_C or N_H.
+## N_H = adm * los, with adm = xi_alpha * N_C admissions per day and
+## los = 1 / delta. This makes admissions equal discharges, so the population
+## sizes stay constant. xi_alpha must be above 0, otherwise N_H = 0.
+pars <- bind_rows(
+  baseline = baseline,
+  edges = edges,
+  random = random,
+  .id = "set"
+) |>
+  mutate(N_C = 1e6, N_H = xi_alpha * N_C / delta)
+
+## ---- compare -------------------------------------------------------------------
+## pick() passes each row's parameters to simulate_new_infections() by name
+check <- pars |>
+  mutate(
+    R0H_formula   = r0h_formula(beta_H, eta, gamma, delta, xi_alpha, p_a, p_i),
+    R0H_simulated = pmap_dbl(
+      pick(beta_C:N_H),
+      simulate_new_infections,
+      seed_in = "I_H_pre",
+      count = "cum_noso"
+    ),
+    R0C_formula   = r0c_formula(beta_C, eta, gamma, delta, xi_alpha, p_a),
+    R0C_simulated = pmap_dbl(
+      pick(beta_C:N_H),
+      simulate_new_infections,
+      seed_in = "I_C_pre",
+      count = "cum_inf_C"
+    )
+  ) |>
+  pivot_longer(
+    starts_with("R0"),
+    names_to = c("quantity", ".value"),
+    names_sep = "_"
+  ) |>
+  mutate(rel_diff = simulated / formula - 1)
+
+## the baseline and the four limit cases
+check |>
+  filter(set != "random") |>
+  select(quantity, set, p_a, p_i, formula, simulated, rel_diff) |>
+  arrange(quantity)
+
+## all parameter sets
+check |>
+  group_by(quantity) |>
+  summarise(
+    n_sets = n(),
+    min_value = min(formula),
+    max_value = max(formula),
+    max_abs_rel_diff = max(abs(rel_diff))
+  )
+
+## ---- figure ----------------------------------------------------------------------
+plot_check <- function(data, title) {
+  ggplot(data, aes(formula, simulated)) +
+    geom_abline(slope = 1,
+                intercept = 0,
+                colour = "grey60") +
+    geom_point(size = 1.5) +
+    scale_x_log10() +
+    scale_y_log10() +
+    labs(title = title, x = "Closed form", y = "Model simulations") +
+    theme_classic(base_size = 11)
+}
+
+fig_r0_check <- plot_check(filter(check, quantity == "R0H"), expression("R"[0 *
+                                                                              H])) +
+  plot_check(filter(check, quantity == "R0C"), expression("R"[0 * C])) +
+  plot_annotation(tag_levels = "A") &
+  theme(plot.tag = element_text(face = "bold", size = 12))
+
+fig_r0_check
 ```
 
 ## Parameters
@@ -596,13 +801,13 @@ loglik <- function(x) {
   out <- sim$out[obs_idx]
 
   ## weekly total reported cases
-  mu <- par[["rho"]] * (adm + out) + 0.5
+  mu <- par[["rho"]] * (adm + out)
   ll <- sum(dnbinom(obs_total, mu = mu, size = par[["phi"]], log = TRUE))
 
   ## inpatient share of reported cases. rho cancels here by construction.
-  q <- sum(adm) / (sum(adm) + sum(out))
-  q <- min(max(q, 1e-6), 1 - 1e-6)
-  ll <- ll + dbinom(n_in, n_total, q, log = TRUE)
+  # q <- sum(adm) / (sum(adm) + sum(out))
+  # q <- min(max(q, 1e-6), 1 - 1e-6)
+  # ll <- ll + dbinom(n_in, n_total, q, log = TRUE)
 
   if (is.finite(ll)) ll else -Inf
 }
@@ -614,7 +819,7 @@ loglik <- function(x) {
 lower <- c(R_eff = 1.05, kappa = 0,  p_a = 0.005, s_C0 = 0.01,
            s_H0 = 0.05, seed = 1, rho = 0.001, phi = 0.1)
 
-upper <- c(R_eff = 5,    kappa = 20, p_a = 0.90,  s_C0 = 0.40,
+upper <- c(R_eff = 5,    kappa = 10, p_a = 0.90,  s_C0 = 0.40,
            s_H0 = 0.70, seed = 50, rho = 1, phi = 100)
 
 n_C_eff <- 200    # effective n for s_C0: registry completeness, not registry size
@@ -626,8 +831,8 @@ log_prior <- function(x) {
   dunif(par[["R_eff"]], 1.05, 5, log = TRUE) +
     dunif(par[["kappa"]], 0, 20, log = TRUE) +
     dbeta(par[["p_a"]], 2, 5, log = TRUE) +        # mean 0.29, deliberately wide
-    dbeta(par[["s_C0"]], 0.080 * n_C_eff, 0.920 * n_C_eff, log = TRUE) +
-    dbeta(par[["s_H0"]], 0.293 * n_H_eff, 0.707 * n_H_eff, log = TRUE) +
+    dbeta(par[["s_C0"]], 0.2 * n_C_eff, 0.8 * n_C_eff, log = TRUE) +
+    dbeta(par[["s_H0"]], 0.3 * n_H_eff, 0.7 * n_H_eff, log = TRUE) +
     dunif(par[["seed"]], 1, 50, log = TRUE) +
     dbeta(par[["rho"]], 2, 8, log = TRUE) +
     dunif(par[["phi"]], 0.1, 100, log = TRUE)
@@ -637,8 +842,8 @@ log_prior <- function(x) {
 ## where the prior has weight
 prior_sampler <- function(n = 1) {
   m <- cbind(runif(n, 1.05, 5), runif(n, 0, 20), rbeta(n, 2, 5),
-             rbeta(n, 0.080 * n_C_eff, 0.920 * n_C_eff),
-             rbeta(n, 0.293 * n_H_eff, 0.707 * n_H_eff),
+             rbeta(n, 0.2 * n_C_eff, 0.8 * n_C_eff),
+             rbeta(n, 0.3 * n_H_eff, 0.7 * n_H_eff),
              runif(n, 1, 50), rbeta(n, 2, 8), runif(n, 0.1, 100))
   if (n == 1) as.numeric(m) else m
 }
@@ -777,63 +982,63 @@ single population sampler can be optimistic, because those chains are only
 argued to be independent after burn-in. `nrChains` controls independent runs and
 is separate from the internal chain count.
 
-```{r}
-# n_runs   <- 3
-# n_chains <- 6
-# n_par    <- min(n_chains, parallel::detectCores() - 1)
-# 
-# ## Each run needs its own starting matrix, otherwise all three begin in the same
-# ## place and the diagnostic means nothing. startValue must be a LIST.
-# make_start <- function() {
-#   t(replicate(n_chains, pmin(
-#     pmax(p_start[par_names] *
-#            runif(length(par_names), 0.7, 1.4), lower + 1e-6), upper
-#   )))
-# }
-# 
-# start_list <- replicate(n_runs, make_start(), simplify = FALSE)
-# 
-# start_ll <- sapply(start_list, function(s)
-#   apply(s, 1, loglik))
-# stopifnot(all(is.finite(start_ll)))
-# round(start_ll, 1)
-# 
-# setup <- createBayesianSetup(
-#   likelihood = loglik,
-#   prior      = prior,
-#   names      = par_names,
-#   parallel   = n_par,
-#   parallelOptions = list(
-#     variables = "all",
-#     packages  = c("deSolve", "stats", "tibble"),
-#     dlls      = NULL
-#   )
-# )
-# 
-# setup$likelihood$density(start_list[[1]])   # confirm the workers can evaluate
-# 
-# ## iterations and burnin are PER RUN, so total work is n_runs times this
-# t_fit <- system.time(fit <- runMCMC(
-#   setup,
-#   "DEzs",
-#   settings = list(
-#     iterations = 1.5e5,
-#     burnin     = 5e4,
-#     startValue = start_list,
-#     nrChains   = n_runs,
-#     message    = TRUE
-#   )
-# ))
-# t_fit
-# 
-# stopParallel(setup)
+```{r, eval=FALSE}
+n_runs   <- 3
+n_chains <- 6
+n_par    <- min(n_chains, parallel::detectCores() - 1)
+
+## Each run needs its own starting matrix, otherwise all three begin in the same
+## place and the diagnostic means nothing. startValue must be a LIST.
+make_start <- function() {
+  t(replicate(n_chains, pmin(
+    pmax(p_start[par_names] *
+           runif(length(par_names), 0.7, 1.4), lower + 1e-6), upper
+  )))
+}
+
+start_list <- replicate(n_runs, make_start(), simplify = FALSE)
+
+start_ll <- sapply(start_list, function(s)
+  apply(s, 1, loglik))
+stopifnot(all(is.finite(start_ll)))
+round(start_ll, 1)
+
+setup <- createBayesianSetup(
+  likelihood = loglik,
+  prior      = prior,
+  names      = par_names,
+  parallel   = n_par,
+  parallelOptions = list(
+    variables = "all",
+    packages  = c("deSolve", "stats", "tibble"),
+    dlls      = NULL
+  )
+)
+
+setup$likelihood$density(start_list[[1]])   # confirm the workers can evaluate
+
+## iterations and burnin are PER RUN, so total work is n_runs times this
+t_fit <- system.time(fit <- runMCMC(
+  setup,
+  "DEzs",
+  settings = list(
+    iterations = 1.5e5,
+    burnin     = 5e4,
+    startValue = start_list,
+    nrChains   = n_runs,
+    message    = TRUE
+  )
+))
+t_fit
+
+stopParallel(setup)
 # saveRDS(fit, "measles_fit.rds")
 ```
 
 ### Diagnostics
 
-```{r}
-fit <- readRDS("measles_fit.rds")
+```{r, eval=FALSE}
+# fit <- readRDS("measles_fit.rds")
 
 gelmanDiagnostics(fit, plot = FALSE)
 summary(fit)
@@ -865,7 +1070,7 @@ posterior::summarise_draws(
 
 ## Posterior
 
-```{r}
+```{r, eval=FALSE}
 post <- getSample(fit, thin = 20) |>
   as.data.frame() |>
   setNames(par_names) |>
@@ -874,8 +1079,8 @@ post <- getSample(fit, thin = 20) |>
     xi       = s_H0 * (1 - s_C0) / (s_C0 * (1 - s_H0)),
     alpha    = alpha_bar / (1 + s_C0 * (xi - 1)),
     xi_alpha = xi * alpha,
-    D_inf    = 1 / (eta + xi_alpha) +
-               (eta / (eta + xi_alpha)) * (1 - p_a) / gamma,
+    D_inf  = (eta + delta) / (eta + xi_alpha + delta) *
+            (1 / eta + (1 - p_a) / gamma),
     beta_C   = R_eff / (D_inf * s_C0),
     beta_H   = kappa * beta_C,
     R0       = beta_C * D_inf,
@@ -900,7 +1105,7 @@ post |>
 
 ### Prediction vs observation
 
-```{r}
+```{r, eval=FALSE}
 set.seed(20260921)
 wk2date <- function(w) t0_date + 7 * w
 
@@ -935,34 +1140,34 @@ obs_d <- obs |> mutate(date = wk2date(t_week))
 
 ### Plot calibration
 
-```{r}
+```{r, eval=FALSE}
 ## plotmath labels: kappa prints as a Greek letter, s_C0 as s with a subscript
 lbl <- c(R_eff = "R[eff]", kappa = "kappa", p_a = "p[a]", s_C0 = "s[C0]",
          s_H0 = "s[H0]", seed = "E[0]", rho = "rho", phi = "phi")
- 
+
 save_fig <- function(p, file, width = 16, height) {
   ggsave(file.path("figs/chap3", file), p, width = width, height = height,
          units = "cm", dpi = 300, bg = "white")
 }
- 
+
 ## the campaign is not in the model; shading it shows where the model may depart
 ## from the data. Replace the two dates with the range of df_cp.
 campaign <- tibble(start = as.Date("2024-09-01"), end = as.Date("2025-03-31"))
- 
+
 campaign_layer <- geom_rect(
   data = campaign, aes(xmin = start, xmax = end, ymin = -Inf, ymax = Inf),
   inherit.aes = FALSE, fill = "grey94")
- 
+
 date_axis <- list(
   scale_x_date(date_breaks = "3 months", date_labels = "%b\n%Y"),
   coord_cartesian(xlim = range(obs_d$date))
 )
- 
- 
+
+
 # =============================================================================
 # Fit
 # =============================================================================
- 
+
 fig_fit <- ggplot(band, aes(date)) +
   campaign_layer +
   annotate("text", x = campaign$start, y = Inf, label = "Vaccination campaign",
@@ -974,23 +1179,23 @@ fig_fit <- ggplot(band, aes(date)) +
              shape = 21, fill = "white", size = 1.5, stroke = 0.5) +
   date_axis +
   scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +   # room for the label
-  labs(x = NULL, y = "Weekly reported\ncases") +
+  labs(x = NULL, y = "Weekly cases") +
   theme_thesis
- 
- 
+
+
 # =============================================================================
 # Residuals
 #
 # Pearson residuals under the negative binomial, at the posterior median of phi.
 # Runs of same-signed residuals mean structure the model does not capture.
 # =============================================================================
- 
+
 phi_med <- median(post$phi)
- 
+
 resid_df <- obs_d |>
   left_join(band |> select(week, med), by = c("t_week" = "week")) |>
   mutate(resid = (total - med) / sqrt(med + med^2 / phi_med))
- 
+
 fig_resid <- ggplot(resid_df, aes(date, resid)) +
   campaign_layer +
   geom_hline(yintercept = 0, linewidth = 0.4) +
@@ -1000,40 +1205,43 @@ fig_resid <- ggplot(resid_df, aes(date, resid)) +
   scale_y_continuous(breaks = c(-2, 0, 2)) +
   labs(x = NULL, y = "Residual") +
   theme_thesis
- 
- 
+
+
 # =============================================================================
 # Posterior distributions and correlations
 #
 # Diagonal: posterior and prior densities, both scaled by the posterior's peak,
 # so a prior that the data overrode reads as flat. Lower triangle: 2,000 joint
-# draws. Upper triangle: posterior correlation.
+# draws, minus the few outside the axis range. Upper triangle: posterior
+# correlation.
 # =============================================================================
- 
+
 post_p  <- post |> select(all_of(par_names))
 prior_p <- prior_sampler(20000) |> as.data.frame() |> setNames(par_names)
- 
-## axis range per parameter: central 99.8% of the posterior
-lo  <- map_dbl(post_p, ~ quantile(.x, 0.001))
-hi  <- map_dbl(post_p, ~ quantile(.x, 0.999))
+
+## axis range per parameter: the central 99% of the posterior
+lo  <- map_dbl(post_p, ~ quantile(.x, 0.005))
+hi  <- map_dbl(post_p, ~ quantile(.x, 0.995))
 mid <- (lo + hi) / 2
- 
+
 cells <- expand_grid(xvar = par_names, yvar = par_names) |>
   mutate(i = match(yvar, par_names), j = match(xvar, par_names))
- 
+
 as_panel <- function(d) {
   d |> mutate(xvar = factor(xvar, levels = par_names),
               yvar = factor(yvar, levels = par_names))
 }
- 
+
 thin <- post_p |> slice_sample(n = 2000)
- 
+
+## a draw outside the range would stretch its row or column, so drop it
 pts <- cells |>
   filter(i > j) |>
   mutate(xy = map2(xvar, yvar, ~ tibble(x = thin[[.x]], y = thin[[.y]]))) |>
   unnest(xy) |>
+  filter(x >= lo[xvar], x <= hi[xvar], y >= lo[yvar], y <= hi[yvar]) |>
   as_panel()
- 
+
 dens <- map_dfr(par_names, function(p) {
   d_post <- density(post_p[[p]],  from = lo[[p]], to = hi[[p]], n = 200)
   d_pri  <- density(prior_p[[p]], from = lo[[p]], to = hi[[p]], n = 200)
@@ -1043,27 +1251,31 @@ dens <- map_dfr(par_names, function(p) {
     mutate(xvar = p, yvar = p)
 }) |>
   as_panel()
- 
+
 cors <- cells |>
   filter(i < j) |>
   mutate(r = map2_dbl(xvar, yvar, ~ cor(post_p[[.x]], post_p[[.y]])),
          x = mid[xvar], y = mid[yvar]) |>
   as_panel()
- 
-## tick marks away from the panel edges, so labels of neighbouring panels
-## cannot collide
-inner_breaks <- function(l) {
-  b <- pretty(l, n = 3)
-  b[b > l[1] + 0.12 * diff(l) & b < l[2] - 0.12 * diff(l)]
+
+## at most two ticks per axis, away from the panel edges. If the two ticks are
+## closer than 45% of the range, their labels can touch, so keep only the tick
+## nearer the middle.
+two_breaks <- function(l) {
+  b <- pretty(l, n = 4)
+  b <- b[b > l[1] + 0.1 * diff(l) & b < l[2] - 0.1 * diff(l)]
+  if (length(b) > 2) b <- b[c(1, length(b))]
+  if (length(b) == 2 && diff(b) < 0.45 * diff(l)) b <- b[which.min(abs(b - mean(l)))]
+  b
 }
- 
+
 ## hold every row and column to its parameter's range
 limits <- bind_rows(
   cells |> transmute(xvar, yvar, x = lo[xvar], y = lo[yvar]),
   cells |> transmute(xvar, yvar, x = hi[xvar], y = hi[yvar])
 ) |>
   as_panel()
- 
+
 fig_corner <- ggplot() +
   geom_blank(data = limits, aes(x, y)) +
   geom_rect(data = cors, aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf,
@@ -1080,19 +1292,22 @@ fig_corner <- ggplot() +
                       guide = "none") +
   scale_linetype_manual(values = c(Posterior = "solid", Prior = "dashed"),
                         name = NULL) +
-  scale_x_continuous(breaks = inner_breaks,
+  scale_x_continuous(breaks = two_breaks,
                      guide = guide_axis(check.overlap = TRUE)) +
-  scale_y_continuous(breaks = inner_breaks,
+  scale_y_continuous(breaks = two_breaks,
                      guide = guide_axis(check.overlap = TRUE)) +
   labs(x = NULL, y = NULL) +
   theme_thesis +
-  theme(strip.placement = "outside",
-        panel.border    = element_rect(colour = "grey75", fill = NA),
-        axis.line       = element_blank(),
-        axis.text       = element_text(size = 6),
-        panel.spacing   = unit(1.2, "mm"))
- 
- 
+  theme(aspect.ratio      = 1,                        # square cells
+        strip.placement   = "outside",
+        strip.text.y.left = element_text(angle = 0),  # horizontal row labels
+        panel.border      = element_rect(colour = "grey75", fill = NA),
+        axis.line         = element_blank(),
+        axis.text         = element_text(size = 6),
+        panel.spacing     = unit(1.2, "mm"),
+        legend.position   = "right")                  # the empty space on the right
+
+
 # =============================================================================
 # Rank plots, one line per independent run, with R-hat and ESS
 #
@@ -1100,27 +1315,27 @@ fig_corner <- ggplot() +
 # independent runs. Draws come from each run separately, so the grouping does
 # not depend on how getSample() orders chains in the combined object.
 # =============================================================================
- 
+
 by_run <- map_dfr(seq_along(fit), function(i) {
   getSample(fit[[i]]) |>
     as.data.frame() |>
     setNames(par_names) |>
     mutate(run = factor(i))
 })
- 
+
 stopifnot(nrow(by_run) == nrow(getSample(fit)))   # same draws as elsewhere
- 
+
 n_bins     <- 20
 rank_break <- seq(0, nrow(by_run), length.out = n_bins + 1)   # equal-count bins
 expected   <- nrow(by_run) / nlevels(by_run$run) / n_bins     # per bin if uniform
- 
+
 rank_df <- by_run |>
   pivot_longer(-run, names_to = "parameter") |>
   mutate(parameter = factor(parameter, levels = par_names)) |>
   group_by(parameter) |>
   mutate(rank = rank(value)) |>
   ungroup()
- 
+
 ## rank-normalised R-hat and the smaller of bulk and tail ESS, per parameter
 conv <- posterior::summarise_draws(draws, "rhat", "ess_bulk", "ess_tail") |>
   filter(variable %in% par_names) |>
@@ -1129,14 +1344,14 @@ conv <- posterior::summarise_draws(draws, "rhat", "ess_bulk", "ess_tail") |>
             label = sprintf("R-hat %.2f\nESS %s", rhat,
                             format(round(pmin(ess_bulk, ess_tail)),
                                    big.mark = ",")))
- 
+
 fig_rank <- ggplot(rank_df, aes(rank, colour = run)) +
   geom_hline(yintercept = expected, linetype = "dashed", colour = "grey50") +
   stat_bin(geom = "line", breaks = rank_break, pad = FALSE,
            position = "identity", linewidth = 0.5) +
   geom_text(data = conv, aes(x, 0, label = label), inherit.aes = FALSE,
-            vjust = -0.4, size = 2.5, colour = "grey30") +
-  facet_wrap(~ parameter, ncol = 4,
+            vjust = -0.4, size = 2.2, colour = "grey30") +
+  facet_wrap(~ parameter, nrow = 1,                  # one row saves height
              labeller = as_labeller(lbl, default = label_parsed)) +
   ggsci::scale_colour_nejm(guide = "none") +   # lines are runs; see caption
   scale_x_continuous(breaks = NULL) +
@@ -1144,30 +1359,34 @@ fig_rank <- ggplot(rank_df, aes(rank, colour = run)) +
   labs(x = "Rank of draw, pooled across runs", y = "Draws per bin") +
   theme_thesis +
   theme(axis.text.y = element_text(size = 7))
- 
- 
+
+
 # =============================================================================
 # One figure
+#
+# wrap_elements() places C as one image. Without it, patchwork lines up C's
+# outside row labels with the axes of A, B and D, and that leaves a gap between
+# their axes and their plots.
 # =============================================================================
- 
+
 fig_all <-
   (fig_fit + theme(axis.text.x = element_blank(),
                    axis.ticks.x = element_blank())) /
   fig_resid /
-  fig_corner /
+  wrap_elements(full = fig_corner) /
   fig_rank +
-  plot_layout(heights = c(5, 2, 10.5, 4.5)) +
+  plot_layout(heights = c(4.5, 1.8, 15, 2.2)) +
   plot_annotation(tag_levels = "A") &
   theme(plot.tag = element_text(face = "bold", size = 12))
 
 fig_all
 
-# save_fig(fig_all, "fig_calibration.png", height = 26)
+# save_fig(fig_all, "fig_calibration.png", height = 21)
 ```
 
 ### Values calibration
 
-```{r}
+```{r, eval=FALSE}
 fmt <- function(x, d = 2) formatC(x, format = "f", digits = d, big.mark = ",")
 ci  <- function(x, d = 2) sprintf("%s (%s to %s)", fmt(median(x), d),
                                   fmt(quantile(x, 0.025), d),
@@ -1226,7 +1445,7 @@ Coverage of the 95% predictive interval. With 80 observations it should be near
 0.95; much less means the model is overconfident, much more means `phi` has
 grown to absorb misfit.
 
-```{r}
+```{r, eval=FALSE}
 obs_d |>
   left_join(band |> select(week, lo95, hi95), by = c("t_week" = "week")) |>
   summarise(coverage_95 = mean(total >= lo95 & total <= hi95))
@@ -1235,7 +1454,7 @@ obs_d |>
 The modelled inpatient share is constant in time; the observed share drifts.
 Only its overall level entered the likelihood, so the weekly pattern is a check.
 
-```{r}
+```{r, eval=FALSE}
 pp |>
   group_by(week) |>
   summarise(mod = median(share), .groups = "drop") |>
@@ -1250,7 +1469,7 @@ pp |>
 
 ### Unfitted quantities
 
-```{r}
+```{r, eval=FALSE}
 post |>
   slice_sample(n = 200) |>
   mutate(draw = row_number()) |>
@@ -1290,7 +1509,7 @@ after the campaign bites, because it has to end the epidemic by depletion alone.
 The residual plot below is the check; a run of positive residuals after the
 dashed line is the campaign showing as structural misfit.
 
-```{r}
+```{r, eval=FALSE}
 obs_d |>
   left_join(band |> dplyr::select(week, med), by = c("t_week" = "week")) |>
   mutate(resid = (total - med) / sqrt(med + med^2 / median(post$phi))) |>
@@ -1306,7 +1525,7 @@ obs_d |>
 
 ## Force of infection
 
-```{r}
+```{r, eval=FALSE}
 set.seed(20260922)
 n_draws <- 1000       # 200 is enough while adjusting the layout
 
@@ -1510,7 +1729,7 @@ fig1
 
 ### Value FOI
 
-```{r}
+```{r, eval=FALSE}
 ## median (95% CrI), to two significant figures, keeping trailing zeros (2.0)
 fmt    <- function(x, d = 2) {
   sub("\\.$", "", trimws(formatC(signif(x, d), format = "fg", digits = d, flag = "#")))
@@ -1614,7 +1833,7 @@ equiv |> mutate(across(c(kappa, foi_ratio), ~ round(.x, 2)))
 
 ## Sensitivity analysis
 
-```{r}
+```{r, eval=FALSE}
 infected <- c("E_C", "I_C_pre", "I_C_post", "E_H", "I_H_pre", "I_H_post")
 
 ## deSolve stops the run when this function crosses zero
@@ -1735,7 +1954,7 @@ pmap(base, run_scenario, threshold = 3) |> list_rbind()
 
 ### R_HH
 
-```{r}
+```{r, eval=FALSE}
 gsea <- pal_gsea("default", n = 6)(6)
 
 ## rate: ward infections per day that one infectious, non-isolated child
@@ -1878,7 +2097,7 @@ fig_AB
 # ggsave("figs/chap3/khh.png", fig_AB, width = 7, height = 8, dpi = 300, bg = "white")
 ```
 
-```{r}
+```{r, eval=FALSE}
 ## panel A: R_HH at both ends of each range
 levers |>
   group_by(parameter) |>
@@ -1898,7 +2117,7 @@ expand_grid(s_H0 = c(0.1, base$s_H0, 0.5),
 
 ## Counterfactual hospital vs no hospital
 
-```{r}
+```{r, eval=FALSE}
 ## total infections, run to fade-out, for one set of conditions
 total_infections <- function(beta_C, kappa, p_a, p_i, s_C0, s_H0, seed,
                              los, adm, threshold = 1, ...) {
@@ -2177,20 +2396,20 @@ fitted_B
 ## Relationship between $s_H$ and $s_C$
 
 ```{r}
-df_plot <- expand_grid(s_C = seq(0.0, 0.15, 0.01), xi = 1:8) |> 
-  mutate(s_H = xi * s_C / (1 + s_C * (xi - 1)))
+df_plot <- expand_grid(s_C = seq(0, 0.15, by = 0.001), xi = 1:8) |>
+  mutate(ratio = xi / (1 + s_C * (xi - 1)))
 
-ggplot(df_plot, aes(x = s_C, y = s_H, colour = factor(xi))) +
-  geom_line(linewidth = 0.8) +
-  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "grey") +
-  scale_y_continuous(breaks = seq(0, 0.6, 0.05)) +
-  labs(
-    x = expression("community susceptible" ~ italic(s)[C]),
-    y = expression("hospital susceptible" ~ italic(s)[H]),
-    colour = expression(xi)
-  ) +
-  scale_color_nejm(guide = guide_legend(reverse = TRUE)) +
-  theme_classic()
+ggplot(df_plot, aes(s_C, ratio, colour = factor(xi))) +
+  geom_line(linewidth = 0.7) +
+  scale_colour_viridis_d(option = "D", end = 0.85, direction = -1,
+                         guide = guide_legend(reverse = TRUE)) +
+  scale_x_continuous(labels = scales::percent, breaks = seq(0, 0.15, 0.05),
+                     expand = expansion(mult = c(0, 0.02))) +
+  scale_y_continuous(breaks = 1:8, expand = expansion(mult = c(0.03, 0.03))) +
+  labs(x = expression("Community susceptible proportion," ~ italic(s)[C]),
+       y = expression("Ratio," ~ italic(s)[H] / italic(s)[C]),
+       colour = expression(xi)) +
+  theme_classic(base_size = 11)
 
-# ggsave("figs/chap3/sc_sh.png", width = 4, height = 3, dpi = 300, bg = "white")
+ggsave("figs/chap3/sc_sh.png", width = 4, height = 3, dpi = 300, bg = "white")
 ```

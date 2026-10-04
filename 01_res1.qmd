@@ -583,9 +583,7 @@ daily_dist <- df_ep2 |>
 panel_theme <- theme_classic() +
   theme(legend.position = "bottom",
         plot.tag = element_text(face = "bold", size = 14))
-```
 
-```{r}
 snapshot_dist <- daily_dist |>
   mutate(bin = floor_date(date, snapshot_unit)) |>
   summarise(n = sum(n), .by = c(district, bin)) |>
@@ -684,24 +682,30 @@ rate_dist <- daily_dist |>
   left_join(census_dist, by = "district") |>
   add_attack_rate(district) |>
   left_join(district_region, by = "district") |>
-  mutate(
-    region = factor(region, levels = lv_region),
-    highlight = if_else(region == "West", "West", "Others")
-  )
+  mutate(region = factor(region, levels = lv_region))
+
+# CHECK: districts with cases but no census population drop out of the panel.
+# Should be empty. Districts 2 or 9 here mean merge_thuduc() was not applied.
+rate_dist |> filter(is.na(n_census)) |> distinct(district)
 
 # log() of a zero moving average returns -Inf, which ggplot drops with a
 # warning. Count them so the gaps in the lines are expected.
 cat("District days with a zero moving average:",
     sum(rate_dist$rate_ma == 0, na.rm = TRUE), "\n")
 
+# Layer order sets which line is drawn on top: faded regions first, then West,
+# then East last so no other line covers it
 pB <- rate_dist |>
   ggplot(aes(x = date, y = log(rate_ma * 1e5), group = district,
-             colour = region, alpha = highlight)) +
+             colour = region)) +
   shade_layer +
-  geom_line() +
+  geom_line(data = \(d) filter(d, !region %in% c("West", "East")), alpha = 0.3) +
+  geom_line(data = \(d) filter(d, region == "West")) +
+  geom_line(data = \(d) filter(d, region == "East")) +
   vline_layer +
   scale_colour_manual(values = district_pals) +
-  scale_alpha_manual(values = c(West = 1, Others = 0.3), guide = "none") +
+  # legend keys at full colour, not the faded version
+  guides(colour = guide_legend(override.aes = list(alpha = 1))) +
   x_scale_ep2 +
   labs(x = NULL, y = "Log attack rate", colour = "Region", tag = "B") +
   panel_theme
@@ -713,6 +717,9 @@ pB <- rate_dist |>
 # Same case_when as df_week, so denominator bands match numerator bands. A
 # parallel cut() with right = TRUE would shift every boundary by one year.
 # Census codes age 1 as under 1, so census age n is completed age n - 1.
+age_cols <- set_names(viridisLite::plasma(5, begin = 0, end = 0.62),
+                      c("<1", "1-5", "5-10", "10-15", ">15"))
+
 census_age <- df_census |>
   mutate(
     age_years = age - 1,
@@ -735,13 +742,14 @@ rate_age <- df_ep2 |>
   left_join(census_age, by = "age_group") |>
   add_attack_rate(age_group)
 
+# fct_rev draws <1 last, so the darkest line sits on top
 pC <- rate_age |>
   mutate(age_group = fct_rev(age_group)) |>
   ggplot(aes(x = date, y = log(rate_ma * 1e5), colour = age_group)) +
   shade_layer_keyed +
   geom_line() +
   vline_layer +
-  scale_color_observable() +
+  scale_colour_manual(values = age_cols) +
   scale_fill_manual(
     values = setNames(shade_fill, ori_label), name = NULL,
     guide = guide_legend(order = 2, keywidth = unit(16, "pt"),
@@ -765,8 +773,8 @@ fig_ep2 <- plot_grid(pA, pB, pC, ncol = 1, rel_heights = c(1, 1, 1.3))
 
 fig_ep2
 
-# ggsave("figs/chap1/ep2_spatial_attack.png", fig_ep2,
-#        width = 5, height = 7.5, dpi = 500, bg = "white")
+ggsave("figs/chap1/ep2_spatial_attack.png", fig_ep2,
+       width = 5, height = 7.5, dpi = 500, bg = "white")
 ```
 
 ### Values cases
@@ -2353,181 +2361,163 @@ scat |>
 ## Sero vs cum inc
 
 ```{r}
-# ===========================================================================
-# 12. REGION-LEVEL CUMULATIVE INCIDENCE, BY BIN
-# ===========================================================================
-# Region incidence is recomputed from summed cases and population, not
-# averaged across district rates.
-
 sero_age_lo <- 9 / 12      # years; matches the EVC denominator
 sero_age_hi <- 5
- 
-bin_keep <- as.Date(c("2024-07-01", "2024-10-01", "2025-01-01",
+snap_week   <- max(weeks)  # last study week; coverage and EVC snapshot
+n_min_round <- 5           # minimum sera per region within the last round
+common_only <- TRUE
+
+bin_all  <- as.Date(c("2024-07-01", "2024-10-01", "2025-01-01",
                       "2025-04-01", "2025-07-01", "2025-10-01"))
- 
-inc_src <- map_snapshot |>
-  as_tibble() |>
-  mutate(bin = as.Date(bin), region = assign_region(district)) |>
-  filter(bin %in% bin_keep)
- 
-setdiff(unique(inc_src$district), levels(child$district))
- 
+# The last four quarters give the same picture (check below), so only the
+# final one is plotted
+bin_keep <- as.Date(c("2024-07-01", "2024-10-01", "2025-10-01"))
+
+inc_src <- snapshot_dist |>
+  filter(bin %in% bin_all) |>
+  mutate(region = as.character(assign_region(district)))
+
+# CHECK: districts with no region drop out of every panel. Should be empty.
+inc_src |> filter(is.na(region)) |> distinct(district)
+
+# cum_n counts cases to the end of each quarter, so quarters are labelled by
+# bin_end, as in panel A of the outbreak figure
 inc_all <- inc_src |>
-  summarise(cum_n = sum(cum_n), n_census = sum(n_census), .by = c(region, bin)) |>
+  summarise(cum_n = sum(cum_n), n_census = sum(n_census),
+            .by = c(region, bin, bin_end)) |>
   mutate(
-    group  = as.character(region),
     inc    = cum_n / n_census * 1e5,
     inc_lo = qchisq(0.025, 2 * cum_n) / 2 / n_census * 1e5,
     inc_hi = qchisq(0.975, 2 * (cum_n + 1)) / 2 / n_census * 1e5
   )
- 
-inc_all |> select(group, bin, cum_n, inc) |> arrange(bin, group) |> print(n = Inf)
- 
-# ===========================================================================
-# 13. IMMUNITY MEASURES VS CUMULATIVE INCIDENCE, REGION LEVEL
-# ===========================================================================
-# Rows are the pre-outbreak immunity measures, columns the outbreak bins, so
-# each row shows how one measure's association with incidence develops as the
-# outbreak accumulates. Every panel has five points.
- 
-snap_week   <- max(weeks)     # last study week; coverage and EVC snapshot
-n_min_round <- 5              # minimum sera per region within the last round
-common_only <- TRUE
- 
-hosp_col <- "hospital"        # <- set to your hospital column name
- 
-# ---- last collection period, defined within each hospital -----------------
- 
-sero_src |>                                   # verify the ordering first
-  count(.data[[hosp_col]], period_collect) |>
-  print(n = Inf)
- 
+
+# CHECK: with one x scale per quarter, a panel looks the same as the next when
+# the regions keep their rank and relative position (pos). Same ranks and
+# similar pos across the last four quarters = safe to merge them.
+inc_all |>
+  mutate(rank = rank(-inc),
+         pos  = round((inc - min(inc)) / diff(range(inc)), 2),
+         .by = bin_end) |>
+  select(region, bin_end, rank, pos) |>
+  pivot_wider(names_from = bin_end, values_from = c(rank, pos))
+
+# verify the ordering first
+sero_src |> count(hospital, period_collect)
+
+# last collection period, defined within each hospital
 sero_last <- sero_src |>
-  filter(period_collect == max(period_collect), .by = all_of(hosp_col))
- 
-sero_last |>                                  # which period each hospital gave
-  summarise(period = first(period_collect), n = n(), .by = all_of(hosp_col))
- 
-sero_last |>
-  filter(age_y >= sero_age_lo, age_y < sero_age_hi) |>
-  count(region) |>
-  print(n = Inf)
- 
-sero_snap <- sero_last |>
-  filter(age_y >= sero_age_lo, age_y < sero_age_hi) |>
-  mutate(region = as.character(region)) |>
-  sero_ci("region") |>
-  filter(n_sero >= n_min_round)
- 
-# ---- coverage and EVC at the snapshot week --------------------------------
- 
-metric_lev <- c(unname(x_labels), "Seroprevalence")
- 
+  filter(period_collect == max(period_collect), .by = hospital)
+
+sero_last |> summarise(period = first(period_collect), n = n(), .by = hospital)
+
+sero_round <- sero_last |>
+  filter(exact_age >= sero_age_lo, exact_age < sero_age_hi) |>
+  sero_ci()
+
+sero_round
+
+sero_snap <- sero_round |> filter(n_sero >= n_min_round)
+
+metric_lev <- c(metric_lvl, "Seroprevalence")
+
 x_all <- bind_rows(
-  ser_region$cov |>
+  ser$cov |>
     filter(week == snap_week) |>
-    transmute(group  = as.character(group),
-              metric = unname(x_labels[as.character(dose)]),
-              x = coverage, x_lo = NA_real_, x_hi = NA_real_),
-  ser_region$evc |>
+    transmute(region = as.character(region),
+              metric = unname(metric_of[as.character(dose)]), x = coverage),
+  ser$evc |>
     filter(week == snap_week) |>
-    transmute(group  = as.character(group),
-              metric = x_labels[["EVC"]],
+    transmute(region = as.character(region), metric = metric_of[["EVC"]],
               x = evc, x_lo = evc_lo, x_hi = evc_hi),
   sero_snap |>
-    transmute(group = as.character(group), metric = "Seroprevalence",
+    transmute(region, metric = "Seroprevalence",
               x = sero, x_lo = sero_lo, x_hi = sero_hi)
 )
- 
+
 if (common_only) {
-  keep <- x_all |>
-    summarise(k = n_distinct(metric), .by = group) |>
-    filter(k == length(metric_lev))
-  x_all <- x_all |> semi_join(keep, by = "group")
+  x_all <- x_all |> filter(n_distinct(metric) == length(metric_lev), .by = region)
 }
- 
-bin_lab <- setNames(format(bin_keep, "%b %Y"), as.character(bin_keep))
- 
+
+# Every metric is paired with every period within a region, on purpose
 dat_inc <- x_all |>
-  inner_join(inc_all |> select(group, bin, region, inc, inc_lo, inc_hi),
-             by = "group") |>
+  inner_join(filter(inc_all, bin %in% bin_keep), by = "region",
+             relationship = "many-to-many") |>
   mutate(metric = factor(metric, levels = metric_lev),
-         region = factor(as.character(region), levels = rank_order),
-         bin    = factor(bin_lab[as.character(bin)], levels = unname(bin_lab)))
- 
-dat_inc |> summarise(n = n(), .by = c(metric, bin)) |> print(n = Inf)
- 
-# ---- Spearman rho ---------------------------------------------------------
-# n = 5 in every panel, and the six bins are nested cumulative counts, so
-# these are not six independent tests. Treat the row as a trajectory.
- 
-cor_inc_all <- dat_inc |>
+         region = factor(region, levels = rank_order),
+         period = factor(format(bin_end, "%b %Y"),
+                         levels = format(sort(unique(bin_end)), "%b %Y")))
+
+dat_inc |> count(metric, period)
+
+# n = 5 per period, and the periods are nested cumulative counts, so these
+# are not independent tests. cor.test() gives the exact p when there are no
+# ties; the normal approximation (exact = FALSE) is poor at n = 5.
+cor_inc <- dat_inc |>
   summarise(
     n   = sum(is.finite(x) & is.finite(inc)),
-    rho = if (n[1] >= 3) cor(x, inc, method = "spearman",
-                             use = "complete.obs") else NA_real_,
-    p   = if (n[1] >= 3) suppressWarnings(
-            cor.test(x, inc, method = "spearman", exact = FALSE)$p.value
+    rho = if (n >= 3) cor(x, inc, method = "spearman",
+                          use = "complete.obs") else NA_real_,
+    p   = if (n >= 3) suppressWarnings(
+            cor.test(x, inc, method = "spearman")$p.value
           ) else NA_real_,
-    .by = c(metric, bin)
-  ) |>
-  mutate(lab = if_else(is.na(rho), "rho = NA",
-                       sprintf("rho = %.2f\np = %.3f", rho, p)))
- 
-cor_inc_all |> print(n = Inf)
- 
-# ---- figure ---------------------------------------------------------------
-# x varies by row and y by column, which is the opposite of what facet_grid
-# can free, so ggh4x is used when available to free every panel.
-# Horizontal bars: 95% VE-parameter interval (EVC) or exact 95% CI
-# (seroprevalence). Coverage is a registry census and carries no bar.
-# Vertical bars: exact 95% Poisson CI for the incidence rate.
+    .by = c(metric, period)
+  )
 
-theil_sen <- function(x, y) {
-  ok <- is.finite(x) & is.finite(y)
-  x <- x[ok]; y <- y[ok]
-  if (length(x) < 3) return(NULL)
-  cb   <- combn(length(x), 2)
-  dx   <- x[cb[2, ]] - x[cb[1, ]]
-  dy   <- y[cb[2, ]] - y[cb[1, ]]
-  keep <- dx != 0
-  if (!any(keep)) return(NULL)
-  b <- median(dy[keep] / dx[keep])
-  tibble(a = median(y - b * x), b = b,
-         x1 = min(x), x2 = max(x))
+cor_inc
+
+# For the figure legend: Spearman rho (p) by metric and period
+cor_inc |>
+  mutate(val = sprintf("%.2f (p = %.2f)", rho, p)) |>
+  select(metric, period, val) |>
+  pivot_wider(names_from = period, values_from = val)
+
+# rho label centred above each period's group of points
+cor_lab <- dat_inc |>
+  summarise(inc = (min(inc) + max(inc)) / 2, .by = c(metric, period)) |>
+  left_join(cor_inc, by = join_by(metric, period)) |>
+  mutate(lab = sprintf("rho = %.2f", rho))
+
+# Fractional logit (quasibinomial GLM, logit link): the fitted curve stays
+# inside 0-1 and bends near the bounds. Two parameters, like a straight line.
+# Unlike Theil-Sen it is not robust to one outlying region.
+fit_frac <- function(inc, x) {
+  ok <- is.finite(inc) & is.finite(x)
+  if (sum(ok) < 3) return(NULL)
+  b    <- unname(coef(glm(x[ok] ~ inc[ok], family = quasibinomial)))
+  grid <- seq(min(inc[ok]), max(inc[ok]), length.out = 100)
+  tibble(inc = grid, x = plogis(b[1] + b[2] * grid))
 }
- 
-fit_ts <- dat_inc |>
-  reframe(theil_sen(inc, x), .by = c(metric, bin)) |>
-  transmute(metric, bin, inc = x1, inc_end = x2,
-            x = a + b * x1, x_end = a + b * x2)
- 
-free_all <- requireNamespace("ggh4x", quietly = TRUE)
- 
+
+fit_curve <- dat_inc |> reframe(fit_frac(inc, x), .by = c(metric, period))
+
+# One panel per metric, x shared across panels. Colour = region, shape =
+# period. Horizontal bars: exact 95% Poisson CI for incidence. Vertical bars:
+# 95% VE-parameter interval (EVC) or exact 95% CI (seroprevalence); coverage
+# is a registry census and carries no bar. Dashed curves: fractional logit fit
+# per period.
 p_inc_all <- ggplot(dat_inc, aes(inc, x, colour = region)) +
   geom_segment(aes(x = inc_lo, xend = inc_hi, y = x, yend = x)) +
   geom_segment(aes(x = inc, xend = inc, y = x_lo, yend = x_hi), na.rm = TRUE) +
-  geom_point(size = 1.2) +
-  geom_segment(data = fit_ts, inherit.aes = FALSE,
-               aes(x = inc, xend = inc_end, y = x, yend = x_end),
-               linetype = "dashed", colour = "grey40", linewidth = 0.4) +
-  geom_text(data = cor_inc_all, aes(x = -Inf, y = Inf, label = lab),
-            inherit.aes = FALSE, colour = "black", hjust = -0.08, vjust = 1.2,
-            lineheight = 0.9) +
-  {if (free_all)
-    ggh4x::facet_grid2(metric ~ bin, scales = "free", independent = "all", , switch = "y")
-   else
-    facet_grid(metric ~ bin, scales = "free", , switch = "y")} +
+  geom_point(aes(shape = period)) +
+  # group = period keeps the three curves in a panel from joining up
+  geom_line(data = fit_curve, aes(inc, x, group = period), inherit.aes = FALSE,
+            linetype = "dashed", colour = "grey40", linewidth = 0.4) +
+  geom_text(data = cor_lab, aes(inc, y = Inf, label = lab),
+            inherit.aes = FALSE, colour = "black", vjust = 1.3) +
+  facet_grid(metric ~ ., scales = "free_y", switch = "y") +
   scale_colour_manual(values = pal_region) +
-  scale_y_continuous(labels = scales::label_percent(accuracy = 1)) +
-  labs(x = "Cumulative incidence per 100,000", y = NULL, colour = "Region") +
-  theme_epi() +
-  theme(strip.placement = "outside")
- 
-# p_inc_all
-#  
+  # space above the points for the rho labels
+  scale_y_continuous(labels = label_percent(),
+                     expand = expansion(mult = c(0.05, 0.25))) +
+  labs(x = "Cumulative incidence per 100,000", y = NULL,
+       colour = "Region", shape = "Cases up to") +
+  theme_epi +
+  theme(strip.placement = "outside", legend.position = "right")
+
+p_inc_all
+
 # ggsave("figs/chap1/fig_immunity_vs_incidence.png", p_inc_all,
-#        width = 9.5, height = 6.5, dpi = 300)
+#        width = 7.5, height = 8, dpi = 300)
 ```
 
 
@@ -3129,4 +3119,16 @@ df_sero_infant |>
 # saveRDS(df_ep2, "C:/Users/ongph/github/data/measles/cleaned/measles_hcmc_24-25.rds")
 ```
 
+Ward
+
+```{r}
+ward_ch2_cch <- read.xlsx("C:/Users/ongph/github/data/sero-meta/ch2_cch_addr.xlsx", startRow = 6, cols = 1:11) |> 
+  janitor::clean_names()
+
+ward_ch2_cch |> 
+  count(benh_vien, mau_den_tu_khoa_phong) |> 
+  mutate(n_pct = sprintf("%d (%.1f%%)", n, n / sum(n) * 100), .by = benh_vien) |> 
+  arrange(benh_vien, desc(n)) |> 
+  select(-n)
+```
 
