@@ -5,8 +5,6 @@ format:
     code-fold: false
 editor_options: 
   chunk_output_type: console
-execute: 
-  eval: false
 ---
 
 ## Constant
@@ -88,6 +86,21 @@ plot_interval <- function(data, var, trim = 0.99,
     theme_classic() +
     theme(legend.position = "top")
 }
+
+## 95% highest density interval (HDI): the narrowest interval that holds 95% of
+## the draws, so every value inside is more probable than every value outside.
+## From coda::HPDinterval() (coda is installed with BayesianTools). Returns
+## numbers: convert dates back with as.Date().
+hdi <- function(x, prob = 0.95) {
+  h <- coda::HPDinterval(coda::as.mcmc(as.numeric(x)), prob = prob)
+  c(lo = h[1, "lower"], hi = h[1, "upper"])
+}
+
+## the HDI on the log scale, for positive quantities (parameters, rates and
+## ratios). The HDI depends on the scale: on the natural scale, values close to 0
+## take up almost no width, so the HDI of a quantity with a long tail towards 0
+## jumps between windows and looks like spikes on a log axis.
+hdi_log <- function(x, prob = 0.95) exp(hdi(log(x), prob))
 ```
 
 ```{r}
@@ -868,7 +881,7 @@ add_derived <- function(d) {
     )
 }
 
-post <- getSample(fit, thin = 20) |>
+post <- getSample(fit) |>
   as.data.frame() |>
   setNames(par_names) |>
   as_tibble() |>
@@ -887,17 +900,33 @@ map_long <- map_row |>
   select(all_of(vars)) |>
   pivot_longer(everything(), names_to = "par", values_to = "MAP")
 
-post |>
+post_map_val <- post |>
   select(all_of(vars)) |>
   pivot_longer(everything(), names_to = "par") |>
   group_by(par = factor(par, levels = vars)) |>
-  summarise(lo = quantile(value, 0.025), hi = quantile(value, 0.975)) |>
+  summarise(lo = hdi_log(value)[["lo"]], hi = hdi_log(value)[["hi"]]) |>
   mutate(par = as.character(par)) |>
   left_join(map_long, by = "par") |>
   relocate(MAP, .after = par) |>
   mutate(crI = paste0(sprintf("%.2f", lo), "-", sprintf("%.2f", hi))) |>
   # write.csv("post.csv", quote = F, row.names = F)
   print(n = Inf)
+
+post_map_val
+
+## check: the HDI (log scale) against the equal-tailed interval (2.5% and 97.5%
+## quantiles), and whether the MAP falls inside each
+post |>
+  select(all_of(vars)) |>
+  pivot_longer(everything(), names_to = "par") |>
+  group_by(par = factor(par, levels = vars)) |>
+  summarise(eti_lo = quantile(value, 0.025), eti_hi = quantile(value, 0.975),
+            hdi_lo = hdi_log(value)[["lo"]], hdi_hi = hdi_log(value)[["hi"]]) |>
+  mutate(par = as.character(par)) |>
+  left_join(map_long, by = "par") |>
+  mutate(map_in_eti = between(MAP, eti_lo, eti_hi),
+         map_in_hdi = between(MAP, hdi_lo, hdi_hi)) |>
+  print(n = Inf, width = Inf)
 ```
 
 ### Prediction vs observation
@@ -909,7 +938,7 @@ wk2date <- function(w) t0_date + 7 * w
 ## posterior predictive draws. y_rep is the weekly total; in the split option it
 ## is the sum of the inpatient and outpatient draws.
 pp <- post |>
-  slice_sample(n = 500) |>
+  slice_sample(n = 1000) |>
   mutate(draw = row_number()) |>
   group_split(draw) |>
   map_dfr(function(d) {
@@ -937,12 +966,35 @@ pp <- post |>
 
 band <- pp |>
   group_by(week) |>
-  summarise(med      = median(mu),
-            lo95     = quantile(y_rep, 0.025), hi95 = quantile(y_rep, 0.975),
-            lo50     = quantile(y_rep, 0.25),  hi50 = quantile(y_rep, 0.75),
-            mean_rep = mean(y_rep), sd_rep = sd(y_rep),
+  summarise(lo95 = hdi(y_rep)[["lo"]],      hi95 = hdi(y_rep)[["hi"]],
+            lo50 = hdi(y_rep, 0.5)[["lo"]], hi50 = hdi(y_rep, 0.5)[["hi"]],
             .groups = "drop") |>
   mutate(date = wk2date(week))
+
+## the MAP: expected weekly cases (the line in A), the negative binomial SD at
+## that mean, and the 95% HDI of 10,000 negative binomial draws (B)
+p_map   <- best$parametersMAP
+s_map   <- run_model(p_map, n_weeks, full = TRUE)
+rho_map <- if (fit_rho) p_map[["rho"]] else 1
+
+nb_draws <- function(mu_in, mu_out, n = 1e4) {
+  if (obs_model == "total") {
+    rnbinom(n, mu = mu_in + mu_out, size = p_map[["phi"]])
+  } else {
+    rnbinom(n, mu = mu_in,  size = p_map[["phi_in"]]) +
+      rnbinom(n, mu = mu_out, size = p_map[["phi_out"]])
+  }
+}
+
+map_week <- tibble(week   = s_map$week,
+                   mu_in  = rho_map * s_map$adm,
+                   mu_out = rho_map * s_map$out) |>
+  mutate(mu  = mu_in + mu_out,
+         sd  = if (obs_model == "total") sqrt(mu + mu^2 / p_map[["phi"]]) else
+                 sqrt(mu_in + mu_in^2 / p_map[["phi_in"]] + mu_out + mu_out^2 / p_map[["phi_out"]]),
+         int = map2(mu_in, mu_out, \(a, b) hdi(nb_draws(a, b))),
+         date = wk2date(week)) |>
+  unnest_wider(int)
 
 obs_d <- obs |> mutate(date = wk2date(t_week))
 ```
@@ -983,7 +1035,7 @@ fig_fit <- ggplot(band, aes(date)) +
            hjust = -0.05, vjust = 1.6, size = 3, colour = "grey35") +
   geom_ribbon(aes(ymin = lo95, ymax = hi95), fill = "grey82") +
   geom_ribbon(aes(ymin = lo50, ymax = hi50), fill = "grey62") +
-  geom_line(aes(y = med), linewidth = 0.6) +
+  geom_line(data = map_week, aes(y = mu), linewidth = 0.6) +
   geom_point(data = obs_d, aes(date, total),
              shape = 21, fill = "white", size = 1.5, stroke = 0.5) +
   date_axis +
@@ -995,22 +1047,25 @@ fig_fit <- ggplot(band, aes(date)) +
 # =============================================================================
 # Residuals
 #
-# Pearson residuals from the posterior predictive draws: observed minus the
-# predictive mean, divided by the predictive SD. This works for every option.
-# Runs of same-signed residuals mean structure the model does not capture.
+# Pearson residuals at the MAP: observed minus the expected weekly cases at the
+# MAP, divided by the negative binomial SD at the MAP. The dotted lines are the
+# 95% HDI of the negative binomial at the MAP, on the same scale. Runs of
+# same-signed residuals mean structure the model does not capture.
 # =============================================================================
 
 resid_df <- obs_d |>
-  left_join(band |> select(week, mean_rep, sd_rep), by = c("t_week" = "week")) |>
-  mutate(resid = (total - mean_rep) / sd_rep)
+  left_join(map_week |> select(week, mu, sd, lo, hi), by = c("t_week" = "week")) |>
+  mutate(resid = (total - mu) / sd,   # Pearson residual at the MAP
+         lo    = (lo - mu) / sd,      # 95% HDI of the negative binomial at the MAP
+         hi    = (hi - mu) / sd)
 
 fig_resid <- ggplot(resid_df, aes(date, resid)) +
   campaign_layer +
   geom_hline(yintercept = 0, linewidth = 0.4) +
-  geom_hline(yintercept = c(-2, 2), linetype = "dotted", linewidth = 0.4) +
+  geom_line(aes(y = lo), linetype = "dotted", linewidth = 0.4) +
+  geom_line(aes(y = hi), linetype = "dotted", linewidth = 0.4) +
   geom_point(shape = 21, fill = "white", size = 1.3, stroke = 0.5) +
   date_axis +
-  scale_y_continuous(breaks = c(-2, 0, 2)) +
   labs(x = NULL, y = "Residual") +
   theme_thesis
 
@@ -1197,12 +1252,13 @@ fig_all
 ```{r, eval=FALSE}
 fmt <- function(x, d = 2) formatC(x, format = "f", digits = d, big.mark = ",")
 
-## point estimate `at` (the MAP) and the 95% CrI of the draws `x`
-est_ci <- function(x, at, d = 2) sprintf("%s (%s to %s)", fmt(at, d),
-                                         fmt(quantile(x, 0.025), d),
-                                         fmt(quantile(x, 0.975), d))
+## point estimate `at` (the MAP) and the 95% HDI of the draws `x`
+est_ci <- function(x, at, d = 2) {
+  h <- hdi_log(x)
+  sprintf("%s (%s to %s)", fmt(at, d), fmt(h[["lo"]], d), fmt(h[["hi"]], d))
+}
 
-## 1. weekly counts inside the 95% posterior predictive interval
+## 1. weekly counts inside the 95% posterior predictive HDI
 cov <- obs |>
   left_join(band |> select(week, lo95, hi95), by = c("t_week" = "week")) |>
   summarise(n_in_band = sum(total >= lo95 & total <= hi95),
@@ -1246,7 +1302,7 @@ rho_txt <- if (fit_rho) est_ci(post$rho, map_row$rho) else "fixed at 1"
 
 cat(sprintf(paste0(
   "%d of %d weekly counts (%.0f%%) fell inside the 95%% posterior predictive ",
-  "interval. Values are MAP (95%% CrI). The model gave %s reported cases against ",
+  "HDI. Values are MAP (95%% HDI). The model gave %s reported cases against ",
   "%s observed, and an inpatient share of %s against %s observed; both were ",
   "fitted. The community effective reproduction number was %s, p_a %s and ",
   "rho %s, with s_C0 and s_H0 fixed at %s and %s. kappa was %s, conditional ",
@@ -1337,7 +1393,7 @@ window <- traj |>
   filter(p > 1e-5) |>
   pull(date)
 
-## each draw at its own peak of community prevalence, for the 95% CrI of kappa
+## each draw at its own peak of community prevalence, for the 95% HDI of kappa
 ## in A and of every ratio in D
 peaks <- traj |>
   group_by(draw) |>
@@ -1345,7 +1401,7 @@ peaks <- traj |>
   ungroup()
 
 ## the MAP parameter set (Posterior section): its trajectory gives every line
-## and point in the figure; the draws give the 95% CrI around them
+## and point in the figure; the draws give the 95% HDI around them
 traj_map <- trajectory(par_of(map_row)) |>
   mutate(kappa = map_row$kappa)
 
@@ -1355,14 +1411,14 @@ peak_date <- peak_map$date
 ## ---- A: the result ------------------------------------------------------------
 ## the force of infection ratio is the product of the two other ratios in the
 ## panel: lambda_H / lambda_C = kappa x P, with P the infectious prevalence ratio
-ratio_t <- traj |>                                  # 95% CrI, day by day
+ratio_t <- traj |>                                  # 95% HDI, day by day
   filter(date %in% window) |>
   mutate(foi  = lambda_H / lambda_C,
          prev = prev_H / prev_C) |>
   pivot_longer(c(foi, prev), names_to = "ratio") |>
   group_by(ratio, date) |>
-  summarise(lo = quantile(value, 0.025),
-            hi = quantile(value, 0.975), .groups = "drop")
+  summarise(lo = hdi_log(value)[["lo"]],
+            hi = hdi_log(value)[["hi"]], .groups = "drop")
 
 ratio_map <- traj_map |>                            # the MAP lines
   filter(date %in% window) |>
@@ -1371,8 +1427,8 @@ ratio_map <- traj_map |>                            # the MAP lines
             prev = prev_H / prev_C) |>
   pivot_longer(-date, names_to = "ratio", values_to = "map")
 
-## kappa: the MAP value, with the 95% CrI of the draws
-kq <- c(quantile(peaks$kappa, 0.025), map_row$kappa, quantile(peaks$kappa, 0.975))
+## kappa: the MAP value, with the 95% HDI of the draws
+kq <- c(hdi_log(peaks$kappa)[["lo"]], map_row$kappa, hdi_log(peaks$kappa)[["hi"]])
 
 ## where each line ends, to place its label
 end_y <- ratio_map |>
@@ -1385,7 +1441,7 @@ end_y <- ratio_map |>
 ## Each label goes on the side of its line with more room. On the log scale, the
 ## room above the kappa x P line (up to P) and above the kappa line (up to 1) is a
 ## factor of 1 / kappa. The room below is a factor of kappa x P (down to 1) and of
-## kappa / its 2.5% quantile (down to the bottom of its band).
+## kappa / the lower end of its HDI (down to the bottom of its band).
 vj <- function(above) if (above) -0.3 else 1.3
 vj_foi   <- vj(1 / kq[[2]] > end_y[["foi"]])
 vj_kappa <- vj(1 / kq[[2]] > kq[[2]] / kq[[1]])
@@ -1425,8 +1481,8 @@ long <- traj |>
   pivot_longer(-c(draw, date), names_to = c("quantity", "setting"),
                names_sep = "_") |>
   group_by(quantity, setting, date) |>
-  summarise(lo = quantile(value, 0.025),
-            hi = quantile(value, 0.975), .groups = "drop")
+  summarise(lo = hdi_log(value)[["lo"]],
+            hi = hdi_log(value)[["hi"]], .groups = "drop")
 
 long_map <- traj_map |>
   filter(date %in% window) |>
@@ -1478,10 +1534,10 @@ ratios_D <- function(d) {
     pivot_longer(everything(), names_to = "factor")
 }
 
-decomp <- ratios_D(peaks) |>                        # 95% CrI, each draw at its peak
+decomp <- ratios_D(peaks) |>                        # 95% HDI, each draw at its peak
   group_by(factor) |>
-  summarise(lo    = quantile(value, 0.025),
-            hi    = quantile(value, 0.975),
+  summarise(lo    = hdi_log(value)[["lo"]],
+            hi    = hdi_log(value)[["hi"]],
             p_gt1 = mean(value > 1), .groups = "drop") |>
   left_join(ratios_D(peak_map) |> rename(map = value),   # the MAP, at its peak
             by = "factor") |>
@@ -1523,17 +1579,18 @@ fig1 <- pA + pB + pC + free(pD) + guide_area() +
 
 fig1
 
-ggsave("figs/chap3/fig_insight_1.png", fig1, width = 16, height = 9,
-       units = "cm", dpi = 300, bg = "white")
+# ggsave("figs/chap3/fig_insight_1.png", fig1, width = 16, height = 9,
+#        units = "cm", dpi = 300, bg = "white")
 ```
 
 ### Value FOI
 
 ```{r}
-## MAP (2.5%-97.5% quantiles across draws), with d decimal places
+## MAP (95% HDI across draws, on the log scale), with d decimal places
 fmt_short <- function(x, at, d = 1) {
   f <- \(v) formatC(v, format = "f", digits = d)
-  sprintf("%s (%s-%s)", f(at), f(quantile(x, 0.025)), f(quantile(x, 0.975)))
+  h <- hdi_log(x)
+  sprintf("%s (%s-%s)", f(at), f(h[["lo"]]), f(h[["hi"]]))
 }
 
 ## dates for the ranges: the dates shown in the figure, within the observed weeks
@@ -1561,11 +1618,12 @@ ranges |>
             fold    = fmt_short(fold,    first(fold_map)))
 
 ## ---- numbers for the text -----------------------------------------------------
-## Run after the figure chunk. Each value is the MAP, with the 2.5% and 97.5%
-## quantiles across the posterior draws in brackets.
+## Run after the figure chunk. Each value is the MAP, with the 95% HDI across
+## the posterior draws (on the log scale) in brackets.
 fmt_short <- function(x, at, d = 1) {
   f <- \(v) formatC(v, format = "f", digits = d)
-  sprintf("%s (%s-%s)", f(at), f(quantile(x, 0.025)), f(quantile(x, 0.975)))
+  h <- hdi_log(x)
+  sprintf("%s (%s-%s)", f(at), f(h[["lo"]]), f(h[["hi"]]))
 }
 
 ## at the peak of community prevalence: the MAP at its own peak, and each draw
@@ -1586,12 +1644,12 @@ ranges_map <- range_of(traj_map |> mutate(draw = 0))
 over_outbreak <- \(r) fmt_short(filter(ranges, ratio == r)$fold,
                                 filter(ranges_map, ratio == r)$fold, d = 2)
 
-## peak date: the MAP, and the 2.5% and 97.5% quantiles across draws
-peak_dates <- quantile(peaks$date, c(0.025, 0.975), type = 1)
+## peak date: the MAP, and the 95% HDI across draws
+peak_dates <- as.Date(hdi(peaks$date), origin = "1970-01-01")
 
 tibble(
   quantity = c(
-    "Peak date, MAP (2.5% to 97.5%)",
+    "Peak date, MAP (95% HDI)",
     "Infectious prevalence at the peak, hospital (per 1,000)",
     "Infectious prevalence at the peak, community (per 1,000)",
     "FOI at the peak, hospital (per 1,000 per day)",
@@ -1829,23 +1887,6 @@ fig_r0_check
 ### R0H parameters
 
 ```{r}
-## =============================================================================
-## Sensitivity of R_0H to beta_H, delta, p_a and p_i
-## (eta, gamma and xi_alpha are fixed at their baseline values)
-##
-## Panel A, slope: the elasticity of R_0H with respect to each parameter, that
-##   is, the % change in R_0H for a 1% increase in the parameter, with the
-##   others at their baseline values. It equals the partial derivative times
-##   (parameter value / R_0H). This removes the units, so the slopes of all
-##   parameters are on the same scale.
-## Panel B, range: R_0H as each parameter moves across its range, with the
-##   others at their baseline values. The point is R_0H at the baseline values,
-##   and the labels give the parameter value at each end of the bar.
-## =============================================================================
-
-library(tidyverse)
-library(patchwork)
-
 ## ---- R_0H and its partial derivatives ------------------------------------------
 r0h <- function(beta_H, eta, gamma, delta, xi_alpha, p_a, p_i) {
   beta_H * ((eta + xi_alpha) / (eta * (eta + xi_alpha + delta)) +
@@ -1879,16 +1920,17 @@ R0H_base <- do.call(r0h, base)
 ## ---- range for each parameter (theoretical) ------------------------------------
 ## p_a, p_i: the full range of a probability, 0 to 1
 ## delta:    length of stay from 2 days to 30 days, so delta from 1/30 to 1/2
-## beta_H:   no natural limits, so the 95% credible interval of kappa, times the
-##           MAP of beta_C (with posterior draws, use the 2.5% and 97.5% quantiles
-##           of kappa * beta_C)
+## beta_H:   no natural limits, so the 95% HDI of kappa, times the MAP of beta_C
+##           (with posterior draws, use the 95% HDI of kappa * beta_C)
 ## label_low, label_high: the parameter value printed at each end of the bar
+kappa_hdi <- c(0.12, 0.95)   # TO UPDATE: the 95% HDI of kappa (posterior table)
+bH        <- c(0.34, 2.32) # times the MAP of beta_C
 pars <- tribble(
-  ~par,     ~name,                     ~sym,      ~low,          ~high,         ~label_low,    ~label_high,
-  "beta_H", "Transmission rate",       "beta[H]", 0.067 * 2.573, 0.842 * 2.573, "0.17",        "2.17",
-  "delta",  "Discharge rate",          "delta",   1 / 30,        1 / 2,         "30-day stay", "2-day stay",
-  "p_a",    "Admission at rash onset", "p[a]",    0,             1,             "0",           "1",
-  "p_i",    "Isolation",               "p[i]",    0,             1,             "0",           "1"
+  ~par,     ~name,                     ~sym,      ~low,   ~high,  ~label_low,             ~label_high,
+  "beta_H", "Transmission rate",       "beta[H]", bH[1],  bH[2],  sprintf("%.2f", bH[1]), sprintf("%.2f", bH[2]),
+  "delta",  "Discharge rate",          "delta",   1 / 30, 1 / 2,  "30-day stay",          "2-day stay",
+  "p_a",    "Admission at rash onset", "p[a]",    0,      1,      "0",                    "1",
+  "p_i",    "Isolation",               "p[i]",    0,      1,      "0",                    "1"
 )
 
 ## ---- slope and range for each parameter ----------------------------------------
@@ -1909,7 +1951,7 @@ pars <- pars |>
          pct_10     = map2_dbl(par, base_value * 1.1,
                                \(p, v) 100 * (do.call(r0h, replace(base, p, v)) / R0H_base - 1))) |>
   arrange(change) |>                                  # largest at the top of the plot
-  mutate(row = fct_inorder(paste0("'", name, ", '*", sym)))
+  mutate(row = fct_inorder(sym))                      # symbol only, e.g. beta[H]
 
 ## check: each elasticity against a numerical one, from R_0H at x * (1 +/- 1e-6)
 elasticity_numeric <- function(p, h = 1e-6) {
@@ -1926,6 +1968,12 @@ pars |>
   mutate(across(where(is.numeric), \(x) signif(x, 3)))
 cat("R_0H at baseline:", round(R0H_base, 2), "\n")
 
+beta_C_map  <- 2.573                       # MAP of beta_C
+beta_H_crit <- base$beta_H / R0H_base
+kappa_crit  <- beta_H_crit / beta_C_map
+beta_H_crit
+kappa_crit
+stopifnot(abs(do.call(r0h, replace(base, "beta_H", beta_H_crit)) - 1) < 1e-12)
 ## ---- figure ------------------------------------------------------------------------
 blue  <- "#1F4E79"
 minus <- \(x) str_replace(x, "^-", "\u2212")   # typographic minus sign
@@ -1968,16 +2016,16 @@ p <- p_slope + p_range +
   plot_layout(widths = c(1, 2)) +
   plot_annotation(tag_levels = "A")
 p
-ggsave("figs/chap3/r0h_effect_plot.png", p, width = 9, height = 2, dpi = 300, bg = "white")
+# ggsave("figs/chap3/r0h_effect_plot.png", p, width = 6, height = 2, dpi = 300, bg = "white")
 ```
 
 ### No hospital
 
-```{r}
+```{r, warning=FALSE}
 beta_C <- map_row$beta_C
 p_a    <- map_row$p_a
 
-s_C0_obs <- s_C0   # the fitted model's s_C0: the framed row
+s_C0_obs <- s_C0   # the baseline s_C0: the framed row
 
 ## hospital susceptibility for a given community susceptibility and xi, and xi
 ## for a given s_C0 and s_H0 (the inverse)
@@ -2106,12 +2154,12 @@ out_without <- filter(d, none >= outbreak_size)   # cells with an outbreak witho
 no_without  <- filter(d, none <  outbreak_size)   # cells without one
 
 ## reference lines in every panel: s_H0 = s_C0 (no excess susceptibility in
-## hospital, dotted) and the s_H0 of the fitted xi (dashed). The point marks
-## the fitted isolation, in the column of the fitted kappa.
+## hospital, dotted) and the s_H0 of the baseline xi (dashed). The point marks
+## the baseline isolation, in the column of the fitted kappa.
 refs   <- distinct(d, s_C0, row) |> mutate(s_H0_fit = s_H_from(s_C0, xi))
 fit_pt <- refs |> mutate(col = factor(kappa_lab[2], kappa_lab), p_i = p_i_fixed)
 
-## frames around the panels of the observed s_C0 (a row) and of the fitted
+## frames around the panels of the baseline s_C0 (a row) and of the fitted
 ## kappa (a column)
 frame_row <- tibble(row = row_lab(s_C0_obs))
 frame_col <- tibble(col = factor(kappa_lab[2], kappa_lab))
@@ -2174,8 +2222,8 @@ fig_sH <- ggplot(mapping = aes(p_i, s_H0)) +
 
 fig_sH
 
-ggsave("figs/chap3/hospital_heatmap_sH.png", fig_sH, width = 12, height = 14.5,
-       units = "cm", dpi = 300, bg = "white")
+# ggsave("figs/chap3/hospital_heatmap_sH.png", fig_sH, width = 12, height = 14.5,
+#        units = "cm", dpi = 300, bg = "white")
 
 ## ---- numbers for the text ---------------------------------------------------------------
 ## the smallest s_H0 (step 0.025) at which the hospital adds infections, by s_C0,
@@ -2204,7 +2252,7 @@ iso_needed <- function(s_C0, s_H0, kappa) {
   uniroot(f, c(0, 1), tol = 0.001)$root
 }
 
-## for the s_H0 of the fitted xi (the dashed lines), by s_C0 and kappa
+## for the s_H0 of the baseline xi (the dashed lines), by s_C0 and kappa
 expand_grid(s_C0 = seq(0.03, 0.08, by = 0.01), kappa = kappa_cols) |>
   mutate(s_H0     = s_H_from(s_C0, xi),
          p_i_need = pmap_dbl(list(s_C0, s_H0, kappa), iso_needed),
@@ -2219,8 +2267,8 @@ iso_needed(0.05, 0.3, map_row$kappa)
 ## ---- longest time to fade-out --------------------------------------------------
 ## the slowest run in each scenario, with its parameter values (years)
 bind_rows(
-  `without hospital` = select(panels, los, s_C0, xi, t_fade = t_fade_none),
-  `with hospital`    = select(heat, los, s_C0, xi, p_i, kappa, t_fade = t_fade_full),
+  `without hospital` = select(panels_sH, s_C0, s_H0, t_fade = t_fade_none),
+  `with hospital`    = select(heat_sH, s_C0, s_H0, p_i, kappa, t_fade = t_fade_full),
   .id = "scenario"
 ) |>
   group_by(scenario) |>
@@ -2238,19 +2286,27 @@ s_threshold
 
 near_elim <- \(d) filter(d, round(s_C0, 2) %in% c(0.04, 0.05, 0.06))
 
-## infections per imported case without the hospital, and the most with it, by panel
-heat |>
+## infections per imported case in each panel (s_C0 and kappa), over the cells
+## shown in the figure: without the hospital (lowest and highest across s_H0,
+## because the inpatients join the community), and the most with it
+heat_sH |>
+  filter(faded | !exclude_not_faded) |>
   near_elim() |>
-  group_by(los, s_C0, xi) |>
-  summarise(none = first(none), max_full = max(full), .groups = "drop") |>
+  group_by(s_C0, kappa = round(kappa, 2)) |>
+  summarise(none_min = min(none), none_max = max(none), max_full = max(full),
+            .groups = "drop") |>
   print(n = Inf)
 
-## at the fitted kappa (MAP), with isolation at 0.5 and at the fitted value
-panels |>
-  near_elim() |>
-  select(los, s_C0, xi, none) |>
-  expand_grid(p_i = c(0.5, p_i_fixed)) |>
-  mutate(full  = pmap_dbl(list(s_C0, xi, map_row$kappa, p_i, los),
+## at the fitted kappa (MAP), with isolation at 0.5 and at the baseline value, for
+## two values of s_H0: that of the baseline xi ("baseline", dashed line) and
+## s_H0 = s_C0 ("same", dotted line)
+expand_grid(s_C0 = c(0.04, 0.05, 0.06), line = c("baseline", "same"),
+            p_i = c(0.5, p_i_fixed)) |>
+  mutate(s_H0  = if_else(line == "baseline", s_H_from(s_C0, xi), s_C0),
+         xi_h  = xi_from(s_C0, s_H0),
+         none  = map2_dbl(s_C0, xi_h,
+                          \(s, x) infections(s, x, 0, 0, los_fix, hospital = FALSE)[["total"]]),
+         full  = pmap_dbl(list(s_C0, xi_h, map_row$kappa, p_i, los_fix),
                           \(...) infections(...)[["total"]]),
          delta = 100 * (full / none - 1)) |>
   print(n = Inf)
@@ -2259,40 +2315,20 @@ panels |>
 
 ### Nosocomial infection
 
-```{r}
-## =============================================================================
-## Share of infections acquired in hospital
-##
-## Same grid as hospital_heatmap.R, full model only. For each run from one
-## imported case:
-##   share = infections acquired in hospital / all infections
-##         = cum_noso / (cum_inf_C + cum_noso)
-## Shown only where there is an outbreak (outbreak_size or more infections).
-##
-## Run after hospital_heatmap.R: it uses infections(), s_H_from() and
-## outbreak_size.
-## =============================================================================
-
-library(tidyverse)
-library(patchwork)
-library(ggnewscale)
-
+```{r, warning=FALSE}
 ## ---- runs (about 5 minutes) ---------------------------------------------------------------
-noso <- expand_grid(los   = c(5.2, 10),
-                    s_C0  = seq(0.03, 0.08, by = 0.01),
-                    xi    = c(2, xi_obs, 9),
-                    p_i   = seq(0, 1, by = 0.1),
-                    kappa = seq(0, 2, by = 0.1)) |>
-  mutate(end = pmap(list(s_C0, xi, kappa, p_i, los),
-                    \(s, x, k, p, l) infections(s, x, k, p, l, counters = TRUE))) |>
-  unnest_wider(end) |>
-  mutate(total = cum_inf_C + cum_noso,
-         share = cum_noso / total)
-
-saveRDS(noso, "data/noso.rds")      # to redraw without rerunning
-# noso <- readRDS("data/noso.rds")
+# noso <- heat_sH |>
+#   select(s_C0, s_H0, xi, p_i, kappa, faded) |>
+#   mutate(end = pmap(list(s_C0, xi, kappa, p_i, los = los_fix, counters = TRUE), infections)) |>
+#   unnest_wider(end) |>
+#   mutate(total = cum_inf_C + cum_noso,
+#          share = cum_noso / total)
+# 
+# saveRDS(noso, "data/noso_sH.rds")      # to redraw without rerunning
+noso <- readRDS("data/noso_sH.rds")
 
 ## ---- figure -------------------------------------------------------------------------------
+## ColorBrewer Reds, six steps (RColorBrewer::brewer.pal(6, "Reds"))
 share_col <- c("0 to 5%"    = "#FEE5D9",
                "5 to 10%"   = "#FCBBA1",
                "10 to 25%"  = "#FC9272",
@@ -2300,653 +2336,113 @@ share_col <- c("0 to 5%"    = "#FEE5D9",
                "50 to 75%"  = "#DE2D26",
                "75 to 100%" = "#A50F15")
 brk_share <- c(-0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1.01)   # ends widened so 0 and 1 are inside
+no_lab    <- sprintf("Fewer than %s infections", scales::comma(outbreak_size))
+
+d_noso <- noso |>
+  filter(faded | !exclude_not_faded) |>
+  mutate(col = factor(kappa, kappa_cols, kappa_lab),
+         row = row_lab(s_C0))
 
 ## "Zero contours were generated" warnings, each followed by a min and a max
 ## warning, are expected: some panels have no area of that kind
-noso_panel <- function(los_value) {
-  no_lab <- sprintf("Fewer than %s infections", scales::comma(outbreak_size))
-  d <- noso |>
-    filter(los == los_value) |>
-    mutate(col = factor(xi, c(2, xi_obs, 9),
-                        c("xi == 2", sprintf("atop(xi == %.2f, '(observed)')", xi_obs), "xi == 9")),
-           ## row label: s_C0, and below it s_H0 for the three xi columns
-           row = sprintf("atop(s[C0] == '%.2f'%s, s[H0] == '%s')", s_C0,
-                         if_else(near(s_C0, s_C0_obs), "~'(observed)'", ""),
-                         map_chr(s_C0, \(s) toString(sprintf("%.2f", s_H_from(s, c(2, xi_obs, 9)))))))
-
-  ggplot(d, aes(p_i, kappa)) +
-    geom_contour_filled(aes(z = share, fill = after_stat(names(share_col)[as.integer(level)])),
-                        breaks = brk_share) +
-    scale_fill_manual(values = share_col, limits = names(share_col),
-                      name = "Infections acquired in hospital",
-                      guide = guide_legend(order = 1, nrow = 2)) +
-    new_scale_fill() +   # the layer below uses a second fill scale
-    ## no outbreak: log10(total / outbreak_size) is below 0
-    geom_contour_filled(aes(z = log10(total / outbreak_size), fill = after_stat(no_lab)),
-                        breaks = c(-10, 0)) +
-    scale_fill_manual(values = setNames("grey80", no_lab), name = "No outbreak",
-                      guide = guide_legend(order = 2)) +
-    facet_grid(row ~ col, labeller = label_parsed) +
-    scale_x_continuous(breaks = c(0, 0.5, 1), labels = c("0", "0.5", "1"), expand = c(0, 0)) +
-    scale_y_continuous(breaks = c(0, 1, 2), expand = c(0, 0)) +
-    labs(title = sprintf("Mean length of stay: %s days", los_value),
-         x = expression("Isolation, "*p[i]), y = expression(kappa)) +
-    theme_classic(base_size = 9) +
-    theme(strip.background = element_blank(),
-          strip.text.y = element_text(angle = 0, hjust = 0),
-          axis.title.y = element_text(angle = 0, vjust = 0.5),
-          plot.title = element_text(size = 9, face = "bold"),
-          panel.spacing.x = unit(3.5, "mm"),
-          panel.spacing.y = unit(3, "mm"))
-}
-
-fig_noso <- (noso_panel(5.2) + theme(strip.text.y = element_blank())) +
-  noso_panel(10) +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
+fig_noso <- ggplot(d_noso, aes(p_i, s_H0)) +
+  geom_contour_filled(aes(z = share, fill = after_stat(names(share_col)[as.integer(level)])),
+                      breaks = brk_share) +
+  scale_fill_manual(values = share_col, limits = names(share_col),
+                    name = "Infections acquired in hospital",
+                    guide = guide_legend(order = 1, ncol = 2)) +
+  new_scale_fill() +   # the layer below uses a second fill scale (legend 2)
+  ## no outbreak: log10(total / outbreak_size) is below 0
+  geom_contour_filled(aes(z = log10(total / outbreak_size), fill = after_stat(no_lab)),
+                      breaks = c(-10, 0)) +
+  scale_fill_manual(values = setNames("#D9D0D6", no_lab), name = "No outbreak",
+                    guide = guide_legend(order = 2)) +
+  ## the same lines, point and frames as the s_H0 heatmap
+  geom_hline(data = refs, aes(yintercept = s_C0), linetype = "dotted", linewidth = 0.3) +
+  geom_hline(data = refs, aes(yintercept = s_H0_fit), linetype = "dashed", linewidth = 0.3) +
+  geom_point(data = fit_pt, aes(y = s_H0_fit), shape = 21, fill = "white",
+             size = 1.4, stroke = 0.5) +
+  geom_rect(data = frame_row, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf,
+            inherit.aes = FALSE, fill = NA, colour = "black", linewidth = 0.9) +
+  geom_rect(data = frame_col, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf,
+            inherit.aes = FALSE, fill = NA, colour = "black", linewidth = 0.9) +
+  facet_grid(row ~ col, labeller = label_parsed) +
+  coord_cartesian(clip = "off") +   # the frames are drawn in full at the panel edges
+  scale_x_continuous(breaks = c(0, 0.5, 1), labels = c("0", "0.5", "1"), expand = c(0, 0)) +
+  scale_y_continuous(breaks = c(0, 0.25, 0.5, 0.75), labels = c("0", "0.25", "0.5", "0.75"),
+                     expand = c(0, 0)) +
+  labs(x = expression("Isolation, "*p[i]),
+       y = expression("Hospital susceptible proportion, "*s[H0])) +
+  theme_classic(base_size = 9) +
+  theme(strip.background = element_blank(),
+        strip.text.y = element_text(angle = 0, hjust = 0),
+        panel.spacing.x = unit(3.5, "mm"),
+        panel.spacing.y = unit(3, "mm"),
+        legend.position = "bottom",
         legend.title.position = "top",
         legend.box.just = "top",
-        legend.spacing.x = unit(8, "mm"),
-        plot.tag = element_text(face = "bold", size = 11))
+        legend.spacing.x = unit(8, "mm"))   # gap between the two legends
 
 fig_noso
 
-ggsave("figs/chap3/nosocomial_share.png", fig_noso, width = 17, height = 18,
-       units = "cm", dpi = 300, bg = "white")
+# ggsave("figs/chap3/nosocomial_share_sH.png", fig_noso, width = 12, height = 14.5,
+#        units = "cm", dpi = 300, bg = "white")
 
 ## ---- numbers for the text -----------------------------------------------------------------
-## share acquired in hospital (%) at isolation 0.9 and kappa 1. NA: no outbreak
-noso |>
-  filter(near(p_i, 0.9), near(kappa, 1)) |>
-  mutate(share = if_else(total >= outbreak_size, round(100 * share), NA)) |>
-  select(los, s_C0, xi, share) |>
-  pivot_wider(names_from = xi, values_from = share, names_prefix = "xi_")
+## runs at two values of s_H0 in every panel: that of the baseline xi ("baseline",
+## dashed line) and s_H0 = s_C0 ("same", dotted line). Each without isolation
+## (p_i = 0) and at the baseline isolation (p_i_fixed), for each s_C0 and kappa.
+fit_noso <- expand_grid(s_C0 = seq(0.03, 0.08, by = 0.01), kappa = kappa_cols,
+                        line = c("baseline", "same"), p_i = c(0, p_i_fixed)) |>
+  mutate(s_H0 = if_else(line == "baseline", s_H_from(s_C0, xi), s_C0),
+         end  = pmap(list(s_C0, xi_from(s_C0, s_H0), kappa, p_i, los = los_fix, counters = TRUE),
+                     infections)) |>
+  unnest_wider(end) |>
+  mutate(total = cum_inf_C + cum_noso,
+         share = cum_noso / total)
 
-## what surveillance would see, at isolation 0.9 and kappa 1 (outbreaks only).
-## Many children infected in hospital are discharged before the rash.
+## share acquired in hospital (%), by line, isolation, s_C0 and kappa. NA: no outbreak
+fit_noso |>
+  mutate(kappa = round(kappa, 2),
+         share = if_else(total >= outbreak_size, round(100 * share), NA)) |>
+  select(line, p_i, s_C0, kappa, share) |>
+  pivot_wider(names_from = kappa, values_from = share, names_prefix = "kappa_") |>
+  arrange(line, p_i, s_C0) |>
+  print(n = Inf)
+
+## what surveillance would see at the baseline values and the fitted kappa
+## (outbreaks only). Many children infected in hospital are discharged before
+## the rash.
 ##   rash_in_hosp: rash onsets in hospital, out of all rash onsets (%)
 ##   inpatients:   measles inpatients whose rash appeared after admission (%)
-noso |>
-  filter(near(p_i, 0.9), near(kappa, 1), total >= outbreak_size) |>
-  transmute(los, s_C0, xi,
+fit_noso |>
+  filter(line == "baseline", p_i == p_i_fixed, kappa == kappa_cols[2], total >= outbreak_size) |>
+  transmute(s_C0,
             true_share   = round(100 * share),
             rash_in_hosp = round(100 * cum_onset_H / (cum_onset_C + cum_onset_H)),
             inpatients   = round(100 * cum_onset_H / (cum_onset_H + cum_adm_rash)))
 
-## across all outbreaks in the grid: how many cells, and the median and range
+## across all outbreaks in the figure: how many cells, and the median and range
 ## of the share (%), by s_C0
-noso |>
+d_noso |>
   filter(total >= outbreak_size) |>
-  group_by(los, s_C0) |>
+  group_by(s_C0) |>
   summarise(outbreaks = n(),
             median    = round(100 * median(share)),
             min       = round(100 * min(share)),
             max       = round(100 * max(share)),
             .groups   = "drop")
-```
 
-
-
-```{r, eval=FALSE}
-infected <- c("E_C", "I_C_pre", "I_C_post", "E_H", "I_H_pre", "I_H_post")
-
-## deSolve stops the run when this function crosses zero
-make_stop_condition <- function(threshold = 1) {
-  function(time, y, parms, ...)
-    sum(y[infected]) - threshold
-}
-
-max_days <- 10 * 365   # safety cap, in days
-
-run_scenario <- function(beta_C,
-                         kappa,
-                         p_a,
-                         p_i,
-                         s_C0,
-                         s_H0,
-                         seed,
-                         los,
-                         adm,
-                         threshold = 1,
-                         ...) {
-  stopifnot(seed > threshold)   # otherwise the run stops at once
-  
-  N_H      <- adm * los
-  N_C      <- N - N_H
-  xi       <- s_H0 * (1 - s_C0) / (s_C0 * (1 - s_H0))
-  alpha    <- adm / N_C / (1 + s_C0 * (xi - 1))
-  xi_alpha <- xi * alpha
-  
-  y0 <- c(
-    S_C = s_C0 * N_C - seed,
-    E_C = seed,
-    I_C_pre = 0,
-    I_C_post = 0,
-    R_C = (1 - s_C0) * N_C,
-    S_H = s_H0 * N_H,
-    E_H = 0,
-    I_H_pre = 0,
-    I_H_post = 0,
-    Q = 0,
-    R_H = (1 - s_H0) * N_H,
-    cum_onset_C = 0,
-    cum_onset_H = 0,
-    cum_noso = 0,
-    cum_adm_rash = 0,
-    cum_inf_C = 0
-  )[state_names]
-  
-  p <- c(
-    beta_C = beta_C,
-    beta_H = kappa * beta_C,
-    xi_alpha = xi_alpha,
-    alpha = alpha,
-    p_a = p_a,
-    p_i = p_i,
-    delta = 1 / los,
-    delta_M = delta_M,
-    sigma = sigma,
-    eta = eta,
-    gamma = gamma
-  )
-  
-  sim <- function(p) {
-    ode(
-      y0,
-      0:max_days,
-      measles_ode,
-      p,
-      method = "lsoda",
-      rootfunc = make_stop_condition(threshold),
-      atol = 1e-3,
-      rtol = 1e-6
-    )
-  }
-  final <- function(sol, x)
-    sol[nrow(sol), x]   # value at the stop time
-  
-  sol  <- sim(p)
-  sol0 <- sim(replace(p, "beta_H", 0))
-  
-  noso  <- final(sol, "cum_noso")
-  inf_C <- final(sol, "cum_inf_C")
-  ## community infectious time from I_C_pre, as D_C in the Posterior section
-  D_C   <- (eta + 1 / los) / (eta + xi_alpha + 1 / los) * (1 / eta + (1 - p_a) / gamma)
-
-  tibble(
-    t_end     = final(sol, "time"),
-    faded     = max(t_end, final(sol0, "time")) < max_days,
-    R_C_eff   = beta_C * s_C0 * D_C,
-    noso_pct  = 100 * noso / (noso + inf_C),
-    peak_prev = 1000 * max(sol[, "I_H_pre"] + sol[, "I_H_post"]) / N_H,
-    inf_C     = inf_C,
-    attr_C    = 100 * (inf_C - final(sol0, "cum_inf_C")) / inf_C
-  )
-}
-
-## baseline: the MAP parameter set (Posterior section), with s_C0, s_H0, the
-## length of stay and admissions fixed as in the Parameters section
-base <- tibble(
-  beta_C = map_row$beta_C,
-  kappa  = map_row$kappa,
-  p_a    = map_row$p_a,
-  p_i    = p_i_fixed,
-  s_C0   = s_C0,
-  s_H0   = s_H0,
-  seed   = map_row$seed,
-  los    = 1 / delta,
-  adm    = adm_per_day
-)
-
-pmap(base, run_scenario) |> list_rbind()
-# Change threshold to check
-pmap(base, run_scenario, threshold = 3) |> list_rbind()
-```
-
-### R_HH
-
-```{r, eval=FALSE}
-gsea <- pal_gsea("default", n = 6)(6)
-
-## rate: ward infections per day that one infectious, non-isolated child
-## spends on the ward
-k_hh_parts <- function(beta_H, s_H0, los, p_i, p_a) {
-  delta  <- 1 / los
-  p_inf  <- sigma / (sigma + delta)       # becomes infectious before discharge
-  p_rash <- p_inf * eta / (eta + delta)   # rash appears before discharge
-  rate   <- beta_H * s_H0
-  tibble(
-    pre_rash  = rate * p_inf / (eta + delta),                   # before the rash
-    post_rash = rate * p_rash * (1 - p_i) / gamma,              # rash on ward, not isolated
-    readmit   = rate * (1 - p_rash) * p_a * (1 - p_i) / gamma,  # back with rash, not isolated
-    K_HH      = pre_rash + post_rash + readmit
-  )
-}
-
-vary <- function(name, values) {
-  base |>
-    expand_grid(value = values) |>
-    mutate(parameter = name, !!name := value)
-}
-
-kappa_star <- expand_grid(los = seq(2, 14, by = 0.25),
-                          p_i = c(0, 0.5, 0.9, 1)) |>
-  mutate(kappa_star = 1 / k_hh_parts(base$beta_C, base$s_H0, los, p_i, base$p_a)$K_HH)
-
-kappa_ci <- quantile(post$kappa, c(0.025, 0.975))
-
-lab <- c(kappa = "kappa", s_H0 = "s[H0]", los = "L~(days)",
-         p_i = "p[i]", p_a = "p[a]")
-as_lever <- \(x) factor(lab[x], levels = lab)   # not as_panel: Part 1's corner plot uses that name
-
-levers <- bind_rows(
-  vary("kappa", seq(0, 2, by = 0.02)),
-  vary("s_H0",  seq(0, 1, by = 0.01)),
-  vary("los",   seq(2, 14, by = 0.1)),
-  vary("p_i",   seq(0, 1, by = 0.01)),
-  vary("p_a",   seq(0, 1, by = 0.01))
-) |>
-  mutate(k_hh_parts(kappa * beta_C, s_H0, los, p_i, p_a),
-         panel = as_lever(parameter))
-
-base_K <- base |>
-  mutate(k_hh_parts(kappa * beta_C, s_H0, los, p_i, p_a)) |>
-  pull(K_HH)
-
-base_pts <- tibble(parameter = names(lab),
-                   value = c(base$kappa, base$s_H0, base$los, base$p_i, base$p_a),
-                   K_HH = base_K) |>
-  mutate(panel = as_lever(parameter))
-
-kappa_lines <- tibble(panel = as_lever("kappa"), x = kappa_ci)   # 95% CrI of kappa
-
-kappa_star <- base$kappa / base_K   # R_HH is proportional to kappa
-crossing <- tibble(panel = as_lever("kappa"), value = kappa_star, K_HH = 1,
-                   label = sprintf("kappa^'*' == %.2f", kappa_star))
-
-## the same R_HH bands and colours as the panel B legend
-bands <- tibble(lo = c(0, 0.25, 0.5, 1, 2, 4),
-                hi = c(0.25, 0.5, 1, 2, 4, Inf),
-                col = gsea)
-
-fig_A <- ggplot(levers, aes(value, K_HH)) +
-  geom_rect(data = bands, aes(ymin = lo, ymax = hi, fill = col),
-            xmin = -Inf, xmax = Inf, inherit.aes = FALSE) +
-  scale_fill_identity() +
-  geom_hline(yintercept = 1, colour = "black", linewidth = 0.5) +
-  geom_vline(data = kappa_lines, aes(xintercept = x),
-             colour = "grey30", linetype = "dashed", linewidth = 0.4) +
-  geom_line(linewidth = 2.2, colour = "white") +   # white edge keeps the line
-  geom_line(linewidth = 0.9, colour = "black") +   # visible on dark bands
-  geom_point(data = base_pts, shape = 21, fill = "white", size = 2.4, stroke = 0.8) +
-  geom_point(data = crossing, size = 2) +
-  geom_text(data = crossing, aes(label = label), parse = TRUE,
-            vjust = -1, size = 3.4) +                        # label above the point
-  facet_wrap(~ panel, nrow = 1, scales = "free_x", labeller = label_parsed) +
-  scale_x_continuous(breaks = scales::breaks_extended(n = 3),
-                     labels = scales::label_number(drop0trailing = TRUE)) +
-  scale_y_continuous(breaks = c(0, 0.25, 0.5, 1, 2),
-                     labels = scales::label_number(drop0trailing = TRUE)) +
-  coord_cartesian(ylim = c(0, 2), expand = FALSE) +
-  labs(x = NULL, y = expression("\u211B"[HH])) +
-  theme_plain +
-  theme(strip.background = element_blank(),
-        strip.text = element_text(size = 11),
-        panel.spacing = unit(6, "mm"))
-
-## ---- panel B: all combinations (the heatmap) ------------------------------
-grid <- expand_grid(
-  los   = seq(2, 14, by = 0.25),
-  kappa = seq(0, 2, by = 0.02),
-  s_H0  = c(0.1, base$s_H0, 0.4, 0.5),
-  p_i   = c(0, 0.3, 0.5, 0.7, 0.9)
-) |>
-  mutate(K_HH = k_hh_parts(kappa * base$beta_C, s_H0, los, p_i, base$p_a)$K_HH)
-
-fitted <- tibble(los = 1 / delta, kappa = base$kappa, s_H0 = base$s_H0, p_i = p_i_fixed)
-
-band_labels <- expression(
-  "\u211B"[HH] <= 0.25,
-  0.25 < {"\u211B"[HH] <= 0.5},
-  0.5 < {"\u211B"[HH] <= 1},
-  1 < {"\u211B"[HH] <= 2},
-  2 < {"\u211B"[HH] <= 4},
-  "\u211B"[HH] > 4
-)
-
-fig_B <- ggplot(grid, aes(los, kappa)) +
-  geom_contour_filled(aes(z = K_HH), breaks = c(0, 0.25, 0.5, 1, 2, 4, Inf)) +
-  geom_contour(aes(z = K_HH), breaks = 1, colour = "black", linewidth = 0.8) +
-  geom_hline(yintercept = kappa_ci, colour = "grey30", linetype = "dashed",
-             linewidth = 0.4) +
-  geom_point(data = fitted, shape = 21, fill = "white", colour = "black",
-             size = 2.4, stroke = 0.8) +
-  scale_fill_manual(values = gsea, labels = band_labels, drop = FALSE,
-                    name = expression("\u211B"[HH])) +
-  scale_x_continuous(breaks = c(4, 8, 12), expand = c(0, 0)) +
-  scale_y_continuous(breaks = seq(0, 2, by = 0.5), expand = c(0, 0)) +
-  facet_grid(s_H0 ~ p_i,
-             labeller = label_bquote(rows = s[H0] == .(round(s_H0, 2)), cols = p[i] == .(p_i))) +
-  guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
-  labs(x = "Mean length of stay (days)", y = expression(kappa)) +
-  theme_plain +
-  theme(panel.spacing = unit(4, "mm"),
-        strip.background = element_blank(),
-        strip.text.y = element_text(angle = 0),
-        legend.position = "bottom",
-        legend.text = element_text(hjust = 0))
-
-## ---- combine ---------------------------------------------------------------
-fig_AB <- fig_A / fig_B +
-  plot_layout(heights = c(1, 4)) +
-  plot_annotation(tag_levels = "A") &
-  theme(plot.tag = element_text(face = "bold", size = 14),
-        axis.title.y = element_text(angle = 0, vjust = 0.5))
-
-fig_AB
-
-# ggsave("figs/chap3/khh.png", fig_AB, width = 7, height = 8, dpi = 300, bg = "white")
-```
-
-```{r, eval=FALSE}
-## panel A: R_HH at both ends of each range
-levers |>
-  group_by(parameter) |>
-  filter(value == min(value) | value == max(value)) |>
-  select(parameter, value, K_HH)
-
-## panel B: kappa needed for R_HH = 1, at the fitted stay and at 14 days
-kappa_ci
-base$kappa
-expand_grid(s_H0 = c(0.1, base$s_H0, 0.5),
-            p_i  = c(0, 0.3, 0.5, 0.7, 0.9),
-            los  = c(1 / delta, 14)) |>
-  mutate(kappa_star = 1 / k_hh_parts(base$beta_C, s_H0, los, p_i, base$p_a)$K_HH,
-         R_HH_at_median_kappa = base$kappa / kappa_star) |>
+## the smallest s_H0 (step 0.025) at which at least half of the infections are
+## acquired in hospital, by s_C0, isolation and kappa. Inf: below half up to
+## s_H0 = 0.75. NA: no outbreak at any s_H0
+d_noso |>
+  filter(round(p_i, 1) %in% c(0, 0.9), total >= outbreak_size) |>
+  group_by(s_C0, p_i, kappa = round(kappa, 2)) |>
+  summarise(s_H0_half = min(s_H0[share >= 0.5], Inf), .groups = "drop") |>
+  pivot_wider(names_from = kappa, values_from = s_H0_half, names_prefix = "kappa_") |>
   print(n = Inf)
 ```
-
-## Counterfactual hospital vs no hospital
-
-```{r, eval=FALSE}
-## total infections, run to fade-out, for one set of conditions
-total_infections <- function(beta_C, kappa, p_a, p_i, s_C0, s_H0, seed,
-                             los, adm, threshold = 1, ...) {
-  stopifnot(seed > threshold)   # otherwise the run stops at once
-  
-  N_H   <- adm * los
-  N_C   <- N - N_H
-  xi    <- s_H0 * (1 - s_C0) / (s_C0 * (1 - s_H0))
-  alpha <- adm / N_C / (1 + s_C0 * (xi - 1))
-  
-  y0 <- c(S_C = s_C0 * N_C - seed, E_C = seed, I_C_pre = 0, I_C_post = 0,
-          R_C = (1 - s_C0) * N_C,
-          S_H = s_H0 * N_H, E_H = 0, I_H_pre = 0, I_H_post = 0, Q = 0,
-          R_H = (1 - s_H0) * N_H,
-          cum_onset_C = 0, cum_onset_H = 0, cum_noso = 0,
-          cum_adm_rash = 0, cum_inf_C = 0)[state_names]
-  
-  p <- c(beta_C = beta_C, beta_H = kappa * beta_C,
-         xi_alpha = xi * alpha, alpha = alpha, p_a = p_a, p_i = p_i,
-         delta = 1 / los, delta_M = delta_M,
-         sigma = sigma, eta = eta, gamma = gamma)
-  
-  sol <- ode(y0, 0:max_days, measles_ode, p, method = "lsoda",
-             rootfunc = make_stop_condition(threshold),
-             atol = 1e-3, rtol = 1e-6)
-  last <- function(x) unname(sol[nrow(sol), x])   # value at the stop time
-  
-  tibble(total = last("cum_inf_C") + last("cum_noso"),   # infections after the start
-         noso  = last("cum_noso"),
-         faded = last("time") < max_days)
-}
-
-## total infections for every row of a scenario table (keeps the input columns)
-run_all <- function(scen) bind_cols(scen, pmap(scen, total_infections) |> list_rbind())
-
-## the same population without the hospital: no admissions and no transmission
-## inside. Children with rash stay in the community and transmit like other
-## children with rash, as the model assumes for children who are not admitted.
-## The children who would have been inpatients live in the community, so
-## community immunity becomes the population average (this uses the original
-## adm, so keep it first).
-no_hospital <- function(scen) {
-  scen |>
-    mutate(s_C0  = (s_C0 * (N - adm * los) + s_H0 * adm * los) / N,
-           kappa = 0,
-           p_a   = 0,
-           adm   = 0)   # no admissions, so N_H = adm * los = 0: no hospital
-}
-
-## scenario values shared by both panels
-los_grid   <- seq(2, 14, by = 1)          # x-axis: mean length of stay (days)
-kappa_grid <- seq(0, 1, by = 0.1)         # y-axis
-p_i_values <- c(0.1, 0.3, 0.5, 0.7, 0.9)  # columns
-
-## =============================================================================
-## Panel A: the fitted community, across inpatient immunity (about 6 minutes)
-## =============================================================================
-s_H0_values <- c(0.1, base$s_H0, 0.4, 0.5, 0.6)   # rows
-
-# ## with the hospital
-# hosp_A <- base |>
-#   select(-kappa, -p_i, -s_H0, -los) |>
-#   expand_grid(s_H0 = s_H0_values, p_i = p_i_values,
-#               los = los_grid, kappa = kappa_grid) |>
-#   run_all()
-# 
-# ## without the hospital: one run per s_H0 and length of stay, which set how
-# ## many susceptible children the hospital holds (the population average)
-# none_A <- base |>
-#   select(-s_H0, -los) |>
-#   expand_grid(s_H0 = s_H0_values, los = los_grid) |>
-#   no_hospital() |>
-#   run_all() |>
-#   select(s_H0, los, total_none = total, faded_none = faded)
-# 
-# ## change in total infections: above 0, the hospital amplifies
-# net_A <- hosp_A |>
-#   left_join(none_A, by = c("s_H0", "los")) |>
-#   mutate(net_pct = 100 * (total / total_none - 1),
-#          faded   = faded & faded_none)
-# count(net_A, faded)   # any FALSE: raise max_days
-# saveRDS(net_A, "net_A.rds")
-
-## saved runs: rerun the block above after any change to the fit or the fixed values
-net_A <- readRDS("net_A.rds")
-
-## the fitted hospital over posterior draws
-set.seed(20260922)
-cf_draws <- post |>
-  slice_sample(n = 200) |>
-  transmute(draw = row_number(), beta_C, kappa, p_a, p_i = p_i_fixed,
-            s_C0 = s_C0, s_H0 = s_H0,   # fixed values, not in post
-            seed, los = 1 / delta, adm = adm_per_day)
-
-post_net <- run_all(cf_draws) |>
-  select(draw, total_hosp = total, faded) |>
-  left_join(cf_draws |> no_hospital() |> run_all() |>
-              select(draw, total_none = total, faded_none = faded),
-            by = "draw") |>
-  mutate(net_pct = 100 * (total_hosp / total_none - 1))
-
-post_net |>
-  summarise(all_faded   = all(faded & faded_none),
-            net_med     = median(net_pct),
-            net_lo      = quantile(net_pct, 0.025),
-            net_hi      = quantile(net_pct, 0.975),
-            p_amplifier = mean(net_pct > 0))   # share of draws where the hospital amplifies
-
-## =============================================================================
-## Panel B: one imported case, across community immunity
-## =============================================================================
-s_C0_values <- c(0.03, 0.04, 0.05, 0.06, 0.07)   # rows
-
-## inpatients keep the fitted odds of being susceptible relative to the community
-xi0 <- xi   # the fitted model's xi (Parameters section)
-s_H0_from <- \(s_C0) xi0 * s_C0 / (1 + s_C0 * (xi0 - 1))
-
-## one imported case in the community; runs stop when fewer than 0.001 people
-## are infected, so each total is the expected number of infections it causes.
-## s_comm keeps the community value (no_hospital() changes s_C0).
-imports <- base |>
-  select(-s_C0, -s_H0, -kappa, -p_i, -los) |>
-  expand_grid(s_C0 = s_C0_values) |>
-  mutate(s_H0 = s_H0_from(s_C0), s_comm = s_C0, seed = 1, threshold = 1e-3)
-# 
-# ## with the hospital
-# hosp_B <- imports |>
-#   expand_grid(p_i = p_i_values, los = los_grid, kappa = kappa_grid) |>
-#   run_all()
-# 
-# ## without the hospital: one run per s_C0 and length of stay
-# none_B <- imports |>
-#   expand_grid(los = los_grid) |>
-#   mutate(p_i = p_i_fixed) |>   # not used without a hospital, but the function needs it
-#   no_hospital() |>
-#   run_all() |>
-#   select(s_comm, los, total_none = total, faded_none = faded)
-# 
-# net_B <- hosp_B |>
-#   left_join(none_B, by = c("s_comm", "los")) |>
-#   mutate(net_pct = 100 * (total / total_none - 1),
-#          faded   = faded & faded_none)
-# count(net_B, faded)   # a few FALSE near the threshold are expected
-# saveRDS(net_B, "net_B.rds")
-
-## saved runs: rerun the block above after any change to the fit or the fixed values
-net_B <- readRDS("net_B.rds")
-
-## =============================================================================
-## Figure (fast: reload with readRDS() to redraw without rerunning)
-## =============================================================================
-gsea6 <- pal_gsea("default", n = 6)(6)
-
-brk_net <- c(-100, -50, -20, 0, 20, 50, Inf)
-lab_net <- c("-100 to -50%", "-50 to -20%", "-20 to 0%",
-             "0 to 20%", "20 to 50%", "more than 50%")
-
-## one heatmap design for both panels: length of stay by kappa, one panel per
-## combination of the row variable and p_i
-net_heatmap <- function(data, facets, labeller, fitted_pt) {
-  ggplot(data, aes(los, kappa)) +
-    geom_contour_filled(aes(z = net_pct), breaks = brk_net, show.legend = TRUE) +
-    geom_contour(aes(z = net_pct), breaks = 0, colour = "black", linewidth = 0.8) +
-    geom_hline(yintercept = kappa_ci, colour = "grey30", linetype = "dashed",
-               linewidth = 0.4) +
-    geom_point(data = fitted_pt, shape = 21, fill = "white", colour = "black",
-               size = 2.2, stroke = 0.8) +
-    scale_fill_manual(values = gsea6, labels = lab_net, drop = FALSE,
-                      name = "Change in total infections with the hospital") +
-    scale_x_continuous(breaks = c(4, 8, 12), expand = c(0, 0)) +
-    scale_y_continuous(breaks = c(0, 0.5, 1), labels = c("0", "0.5", "1"),
-                       expand = c(0, 0)) +
-    facet_grid(facets, labeller = labeller) +
-    guides(fill = guide_legend(nrow = 2, byrow = TRUE, title.position = "top")) +
-    labs(x = "Mean length of stay (days)", y = expression(kappa)) +
-    theme_plain +
-    theme(panel.spacing = unit(3, "mm"),
-          strip.background = element_blank(),
-          strip.text.y = element_text(angle = 0),
-          axis.title.y = element_text(angle = 0, vjust = 0.5),
-          legend.text = element_text(hjust = 0))
-}
-
-## A: the fitted hospital sits in the panel with the fitted s_H0 and p_i
-fig_A <- net_heatmap(
-  net_A, s_H0 ~ p_i,
-  label_bquote(rows = s[H0] == .(round(s_H0, 2)), cols = p[i] == .(p_i)),
-  tibble(los = 1 / delta, kappa = base$kappa, s_H0 = base$s_H0, p_i = p_i_fixed)
-)
-
-## B: the fitted hospital appears in every row of its p_i column
-fig_B <- net_heatmap(
-  net_B, s_comm ~ p_i,
-  label_bquote(rows = list(s[C0] == .(s_comm), s[H0] == .(round(s_H0_from(s_comm), 2))),
-               cols = p[i] == .(p_i)),
-  tibble(los = 1 / delta, kappa = base$kappa, p_i = p_i_fixed)
-)
-
-fig_amp <- fig_A / fig_B +
-  plot_layout(guides = "collect") +
-  plot_annotation(tag_levels = "A") &
-  theme(legend.position = "bottom",
-        plot.tag = element_text(face = "bold", size = 14))
-
-fig_amp
-
-# ggsave("figs/chap3/amplifier.png", fig_amp, width = 5, height = 8,
-#        dpi = 300, bg = "white")
-
-
-## ---- 1. the fitted hospital, over posterior draws (panel A) --------------------
-post_net |>
-  summarise(net_med     = median(net_pct),
-            net_lo      = quantile(net_pct, 0.025),
-            net_hi      = quantile(net_pct, 0.975),
-            p_amplifier = mean(net_pct > 0))
-
-## ---- 2. kappa above which the hospital amplifies (the black line) ---------------
-## linear interpolation between the last kappa below 0% and the first at or above;
-## NA means the hospital does not amplify for any kappa up to 1
-kappa_amp <- function(kappa, net) {
-  i <- which(net >= 0)[1]
-  if (is.na(i)) return(NA_real_)
-  if (i == 1) return(kappa[1])
-  kappa[i - 1] + (0 - net[i - 1]) * (kappa[i] - kappa[i - 1]) / (net[i] - net[i - 1])
-}
-
-thr_A <- net_A |>
-  arrange(s_H0, p_i, los, kappa) |>
-  group_by(s_H0 = round(s_H0, 2), p_i, los) |>
-  summarise(kappa_amp = kappa_amp(kappa, net_pct), .groups = "drop")
-
-thr_B <- net_B |>
-  arrange(s_comm, p_i, los, kappa) |>
-  group_by(s_C0 = s_comm, p_i, los) |>
-  summarise(kappa_amp = kappa_amp(kappa, net_pct), .groups = "drop")
-
-## thresholds at mean stays of 2, 5 and 14 days (columns los_2, los_5, los_14)
-thr_A |>
-  filter(los %in% c(2, 5, 14)) |>
-  pivot_wider(names_from = los, values_from = kappa_amp, names_prefix = "los_") |>
-  print(n = Inf)
-
-thr_B |>
-  filter(los %in% c(2, 5, 14)) |>
-  pivot_wider(names_from = los, values_from = kappa_amp, names_prefix = "los_") |>
-  print(n = Inf)
-
-## ---- 3. panel A: the change when s_H0 = 0.1 ----------------------------------------
-net_A |>
-  filter(near(s_H0, 0.1)) |>
-  summarise(min = min(net_pct), max = max(net_pct))
-
-## ---- 4. panel B: the absolute numbers behind the percentages --------------------
-net_B |>
-  filter(los == 5, near(kappa, 0.3) | near(kappa, 0.5) | near(kappa, 0.7),
-         p_i %in% c(0.1, 0.3, 0.5)) |>
-  select(s_C0 = s_comm, p_i, kappa, with_hospital = total,
-         no_hospital = total_none, net_pct) |>
-  arrange(s_C0, p_i, kappa) |>
-  print(n = Inf)
-
-## ---- 5. panel B: the fitted hospital (white points), at the fitted stay ---------
-fitted_B <- imports |>
-  mutate(kappa = base$kappa, p_i = p_i_fixed, los = 1 / delta) |>
-  run_all() |>
-  select(s_C0 = s_comm, with_hospital = total) |>
-  left_join(imports |>
-              mutate(p_i = p_i_fixed, los = 1 / delta) |>
-              no_hospital() |>
-              run_all() |>
-              select(s_C0 = s_comm, no_hospital = total),
-            by = "s_C0") |>
-  mutate(net_pct = 100 * (with_hospital / no_hospital - 1))
-fitted_B
-```
-
 
 ## Relationship between $s_H$ and $s_C$
 
@@ -2966,5 +2462,5 @@ ggplot(df_plot, aes(s_C, ratio, colour = factor(xi))) +
        colour = expression(xi)) +
   theme_classic(base_size = 11)
 
-ggsave("figs/chap3/sc_sh.png", width = 4, height = 3, dpi = 300, bg = "white")
+# ggsave("figs/chap3/sc_sh.png", width = 4, height = 3, dpi = 300, bg = "white")
 ```

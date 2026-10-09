@@ -305,18 +305,14 @@ p_all
 ### Density of nosocomial infection
 
 ```{r}
-library(tidyverse)
-library(ggridges)
-
-# ---- settings ---------------------------------------------------------------
 n_provs     <- 10
 bw_days     <- 40                                     # kernel sd, in days
-min_n       <- 3                                      # min cases per province x source
+min_n       <- 0                                      # min cases per province x source
 weight_by_n <- FALSE                                  # kept FALSE: shape only
 ridge_scale <- 0.9
 grid_n      <- 512
 x_lims      <- as.Date(c("2017-04-01", "2020-01-01"))
-hl_end      <- as.Date("2019-01-01")                  # highlight only before this date
+hl_end      <- as.Date("2023-01-01")                  # highlight only before this date
 hl_alpha    <- 0.35
 sort_by     <- "mean"                                 # "mean", "other h", or "nch"
 n_boot      <- 1000
@@ -494,13 +490,11 @@ p_ridge
 ### Nosocomial infection
 
 ```{r}
-# ---- settings ---------------------------------------------------------------
 mcv1_age   <- 9        # months, MCV1 in the Vietnam schedule
 cal_sev    <- FALSE    # TRUE only if you add cal -> sev to the DAG
 cal_in_med <- FALSE    # FALSE matches dagitty {age}; TRUE adds calendar time
 out_dir    <- "figs/chap2"
 umc_lab    <- "Underlying medical conditions"
-dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
 # ---- helpers ----------------------------------------------------------------
 yn <- function(x) {
@@ -671,40 +665,9 @@ print(tribble(
   "mAge*",  "age -> *",     "{ } exogenous",   "unadjusted"
 ))
 
-# ---- testable implications, tested ----------------------------------------
-cat("\n===== TESTING THE FOUR IMPLIED CONDITIONAL INDEPENDENCIES =====\n")
-m_ac <- lm(age_m ~ ns(t_num, 3), df_an)
-cat("\nage _||_ cal            p =", signif(anova(m_ac)[1, "Pr(>F)"], 3),
-    " R2 =", round(summary(m_ac)$r.squared, 4), "\n")
-
-cat("cal _||_ med            p =",
-    signif(lrt_p(glm(umc ~ ns(t_num, 3), df_an, family = binomial),
-                 glm(umc ~ 1, df_an, family = binomial)), 3), "\n")
-
-for (k in 1:2) {
-  f <- glm(as.formula(paste0("sev", k, " ~ age_band + umc_f + vacc_f + ns(t_num, 3)")),
-           df_sev, family = binomial)
-  r <- glm(as.formula(paste0("sev", k, " ~ age_band + umc_f + vacc_f")),
-           df_sev, family = binomial)
-  cat("cal _||_ sev>=", k, " | age,med,vacc   p =", signif(lrt_p(f, r), 3), "\n", sep = "")
-}
-
-for (k in 1:2) {
-  f <- glm(as.formula(paste0("sev", k, " ~ age_band + umc_f + vacc_f + noso")),
-           df_sev, family = binomial)
-  r <- glm(as.formula(paste0("sev", k, " ~ age_band + umc_f + vacc_f")),
-           df_sev, family = binomial)
-  ct <- summary(f)$coefficients["noso", ]
-  cat("noso _||_ sev>=", k, " | age,med,vacc  OR = ", sprintf("%.2f (%.2f-%.2f)",
-      exp(ct[1]), exp(ct[1] - 1.96 * ct[2]), exp(ct[1] + 1.96 * ct[2])),
-      "  p = ", signif(lrt_p(f, r), 3), "\n", sep = "")
-}
-cat("\nIf the last test rejects, add hexp -> sev to the DAG and re-derive the sets.\n")
-
 # =============================================================================
 # SECTION 1. WHO ACQUIRED MEASLES IN HOSPITAL
 # =============================================================================
-cat("\n\n===== SECTION 1: WHO ACQUIRED MEASLES IN HOSPITAL =====\n")
 
 cat("\n-- 1.0 how much transmission was nosocomial --\n")
 print(df_an |> count(src3) |> mutate(pct = round(100 * n / sum(n), 1)))
@@ -904,12 +867,5 @@ ggsave(file.path(out_dir, "c2_figB_results.png"), p_B, width = 7, height = 2.1, 
 
 
 # ggsave(file.path(out_dir, "fig_results.png"), p_all, width = 9, height = 7, dpi = 300, bg = "white")
-```
-
-
-```{r}
-tmp <- df_case |> 
-  filter(province == "Nam Dinh")
-table(tmp$source_province)
 ```
 
